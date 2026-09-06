@@ -1511,6 +1511,35 @@ function Emissao({
   }, [loadReq]);
   const [preview, setPreview] = useState(null);
   const fileRef = useRef();
+  const dropRef = useRef();
+  useEffect(() => {
+    const onPaste = async e => {
+      if (!dropRef.current || dropRef.current.offsetParent === null) return;
+      const items = e.clipboardData && e.clipboardData.items || [];
+      const fl = [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.type && it.type.indexOf("image") === 0) {
+          const f = it.getAsFile();
+          if (f) fl.push(f);
+        }
+      }
+      if (!fl.length) return;
+      e.preventDefault();
+      const read = await Promise.all(fl.map(file => new Promise(res => {
+        const r = new FileReader();
+        r.onload = () => res({
+          name: file.name || "colado-" + Date.now() + ".png",
+          mime: file.type || "image/png",
+          base64: r.result.split(",")[1]
+        });
+        r.readAsDataURL(file);
+      })));
+      setFiles(p => [...p, ...read].slice(0, 5));
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, []);
   const set = p => setForm(f => ({
     ...f,
     ...p
@@ -1644,6 +1673,7 @@ function Emissao({
       fontWeight: 400
     }
   }, "at\xE9 5 \xB7 PDF, PNG, print")), /*#__PURE__*/React.createElement("div", {
+    ref: dropRef,
     onClick: () => fileRef.current.click(),
     onDragOver: e => e.preventDefault(),
     onDrop: e => {
@@ -1668,7 +1698,7 @@ function Emissao({
     style: {
       fontSize: 13
     }
-  }, "Arraste ou clique \u2014 a\xE9reo, hotel ou pacote")), /*#__PURE__*/React.createElement("input", {
+  }, "Arraste, clique ou ", /*#__PURE__*/React.createElement("b", null, "cole (Ctrl/Cmd+V)"), " \u2014 a\xE9reo, hotel ou pacote")), /*#__PURE__*/React.createElement("input", {
     ref: fileRef,
     type: "file",
     multiple: true,
@@ -4253,7 +4283,36 @@ function Orcamento({
   }, [loadReq]);
   const fileRef = useRef(),
     dRef = useRef(),
-    hRef = useRef();
+    hRef = useRef(),
+    dropRef = useRef();
+  useEffect(() => {
+    const onPaste = async e => {
+      if (!dropRef.current || dropRef.current.offsetParent === null) return;
+      const items = e.clipboardData && e.clipboardData.items || [];
+      const fl = [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.type && it.type.indexOf("image") === 0) {
+          const f = it.getAsFile();
+          if (f) fl.push(f);
+        }
+      }
+      if (!fl.length) return;
+      e.preventDefault();
+      const read = await Promise.all(fl.map(file => new Promise(res => {
+        const r = new FileReader();
+        r.onload = () => res({
+          name: file.name || "colado-" + Date.now() + ".png",
+          mime: file.type || "image/png",
+          base64: r.result.split(",")[1]
+        });
+        r.readAsDataURL(file);
+      })));
+      setFiles(p => [...p, ...read].slice(0, 5));
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, []);
   const set = p => setForm(f => ({
     ...f,
     ...p
@@ -4472,6 +4531,7 @@ function Orcamento({
       fontWeight: 400
     }
   }, "at\xE9 5 \xB7 PDF, print")), /*#__PURE__*/React.createElement("div", {
+    ref: dropRef,
     onClick: () => fileRef.current.click(),
     onDragOver: e => e.preventDefault(),
     onDrop: e => {
@@ -4496,7 +4556,7 @@ function Orcamento({
     style: {
       fontSize: 13
     }
-  }, "Print do site/companhia/milhas com voo, hotel e pre\xE7o")), /*#__PURE__*/React.createElement("input", {
+  }, "Print da cota\xE7\xE3o \u2014 arraste, clique ou ", /*#__PURE__*/React.createElement("b", null, "cole (Ctrl/Cmd+V)"))), /*#__PURE__*/React.createElement("input", {
     ref: fileRef,
     type: "file",
     multiple: true,
