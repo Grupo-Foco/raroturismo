@@ -363,11 +363,9 @@ const {
 
 /* ═══════════════ CONFIG — preencha depois de criar no Supabase ═══════════════ */
 const CONFIG = {
-  SUPABASE_URL: "",
-  // ex.: https://xxxx.supabase.co   (deixe vazio p/ testar em memoria)
-  SUPABASE_ANON_KEY: "",
-  // chave anon public
-  EXTRACT_URL: "" // ex.: https://xxxx.supabase.co/functions/v1/extract
+  SUPABASE_URL: "https://vxuljfqwhpmxeucaaeyf.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWxqZnF3aHBteGV1Y2FhZXlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MTAxMzcsImV4cCI6MjEwNDI4NjEzN30.Z2gZoW20nWO8yOOxI-avRekeW1BD5Co90KhMDRYbj0U",
+  EXTRACT_URL: "https://vxuljfqwhpmxeucaaeyf.supabase.co/functions/v1/extract"
 };
 const RT = {
   localKey: ""
@@ -707,7 +705,9 @@ async function extractAI(files, mode) {
     const r = await fetch(CONFIG.EXTRACT_URL, {
       method: "POST",
       headers: {
-        "content-type": "application/json"
+        "content-type": "application/json",
+        "Authorization": "Bearer " + CONFIG.SUPABASE_ANON_KEY,
+        "apikey": CONFIG.SUPABASE_ANON_KEY
       },
       body: JSON.stringify(payload)
     });
