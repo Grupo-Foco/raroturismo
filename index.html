@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>RaRo Turismo — Vouchers</title>
 <style>
 
@@ -28,6 +28,21 @@ h3.st{font-size:15px;font-weight:700;color:#1A3A2A;margin:0}
 .mut{color:#6B7A70}
 button.icn{background:none;border:none;cursor:pointer;padding:2px;font-size:15px}
 
+
+/* ── responsivo ── */
+@media(max-width:920px){ .two{grid-template-columns:1fr} }
+@media(max-width:640px){
+  .wrap{padding:0 10px}
+  .card{padding:14px;margin-bottom:12px}
+  .tab{padding:11px 12px;font-size:13px}
+  h3.st{font-size:14px}
+  .g3{grid-template-columns:1fr 1fr;gap:8px}
+  .in{font-size:16px}            /* evita zoom automatico no iOS ao focar campos */
+}
+@media(max-width:430px){
+  .g2,.g3{grid-template-columns:1fr}
+  header img{height:36px !important}
+}
 </style>
 </head>
 <body>
@@ -491,6 +506,17 @@ const isNextDay = (saida, chegada) => {
     cp = chegada.split(":");
   if (sp.length < 2 || cp.length < 2) return false;
   return +cp[0] * 60 + +cp[1] < +sp[0] * 60 + +sp[1];
+};
+const chegDate = s => {
+  if (!s.data) return "";
+  if (isNextDay(s.saida, s.chegada)) {
+    const d = parseDate(s.data);
+    if (d) {
+      d.setDate(d.getDate() + 1);
+      return d.toLocaleDateString("pt-BR");
+    }
+  }
+  return fmtDate(s.data);
 };
 const paradasFmt = pv => {
   if (pv === "" || pv == null) return "—";
@@ -3430,7 +3456,7 @@ function FlightCard({
   }), /*#__PURE__*/React.createElement(OrcMeta, {
     center: true,
     label: "Chegada",
-    value: s.chegada ? /*#__PURE__*/React.createElement("span", null, fmtDate(s.data) + " " + s.chegada, isNextDay(s.saida, s.chegada) && /*#__PURE__*/React.createElement("sup", {
+    value: s.chegada ? /*#__PURE__*/React.createElement("span", null, chegDate(s) + " " + s.chegada, isNextDay(s.saida, s.chegada) && /*#__PURE__*/React.createElement("sup", {
       style: {
         color: "#9A7B1F",
         fontWeight: 700,
@@ -3745,7 +3771,7 @@ function printOrcamento(t) {
   const metaC = (l, v) => `<div style="text-align:center"><div style="font-size:9px;color:#6B7A70;font-weight:700">${l}</div><div style="font-size:13px;font-weight:700">${v}</div></div>`;
   const fcard = s => {
     const ida = s.direcao === "ida";
-    return `<div style="border:1px solid ${LINE};border-radius:10px;overflow:hidden;margin-bottom:7px"><div style="background:${ida ? "#F1F6F2" : "#FBF6E8"};padding:6px 14px"><b style="font-size:11px;color:${ida ? GREEN : "#9A7B1F"}">${ida ? "→ VOO DE IDA" : "← VOO DE VOLTA"}</b> <span style="font-size:11px;color:#6B7A70">${s.cabine || "Econômica"}</span></div><div style="padding:8px 14px"><div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:2px">${s.origem || "—"} <span style="color:${GOLD}">✈</span> ${s.destino || "—"}</div><div style="display:flex;justify-content:space-around;margin-top:8px;gap:8px">${metaC("Partida", fmtDate(s.data) + (s.saida ? " " + s.saida : ""))}${metaC("Chegada", s.chegada ? fmtDate(s.data) + " " + s.chegada + (isNextDay(s.saida, s.chegada) ? '<sup style="color:#9A7B1F;font-weight:700;font-size:9px">+1</sup>' : "") : "—")}${metaC("Duração", durOf(s))}${metaC("Paradas", paradasFmt(s.paradas))}</div></div></div>`;
+    return `<div style="border:1px solid ${LINE};border-radius:10px;overflow:hidden;margin-bottom:7px"><div style="background:${ida ? "#F1F6F2" : "#FBF6E8"};padding:6px 14px"><b style="font-size:11px;color:${ida ? GREEN : "#9A7B1F"}">${ida ? "→ VOO DE IDA" : "← VOO DE VOLTA"}</b> <span style="font-size:11px;color:#6B7A70">${s.cabine || "Econômica"}</span></div><div style="padding:8px 14px"><div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:2px">${s.origem || "—"} <span style="color:${GOLD}">✈</span> ${s.destino || "—"}</div><div style="display:flex;justify-content:space-around;margin-top:8px;gap:8px">${metaC("Partida", fmtDate(s.data) + (s.saida ? " " + s.saida : ""))}${metaC("Chegada", s.chegada ? chegDate(s) + " " + s.chegada + (isNextDay(s.saida, s.chegada) ? '<sup style="color:#9A7B1F;font-weight:700;font-size:9px">+1</sup>' : "") : "—")}${metaC("Duração", durOf(s))}${metaC("Paradas", paradasFmt(s.paradas))}</div></div></div>`;
   };
   const voos = hasAereo(t) ? [...idas, ...voltas].map(fcard).join("") + (bagChips.length ? `<div style="margin-bottom:6px">${bagChips.map(function (c) {
     return chip(c[0], c[1]);
