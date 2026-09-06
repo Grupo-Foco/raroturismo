@@ -29,19 +29,27 @@ h3.st{font-size:15px;font-weight:700;color:#1A3A2A;margin:0}
 button.icn{background:none;border:none;cursor:pointer;padding:2px;font-size:15px}
 
 
-/* ── responsivo ── */
+
+/* ── responsivo (celular/tablet) ── */
+.wrap{max-width:1040px}
 @media(max-width:920px){ .two{grid-template-columns:1fr} }
-@media(max-width:640px){
+@media(max-width:700px){
   .wrap{padding:0 10px}
   .card{padding:14px;margin-bottom:12px}
-  .tab{padding:11px 12px;font-size:13px}
   h3.st{font-size:14px}
+  .in{font-size:16px}                 /* evita zoom no iOS ao focar */
   .g3{grid-template-columns:1fr 1fr;gap:8px}
-  .in{font-size:16px}            /* evita zoom automatico no iOS ao focar campos */
+  /* cabeçalho mais compacto */
+  header .row{padding:10px 0 !important}
+  header img{height:34px !important}
+  header .row div div:first-child{font-size:13px !important;letter-spacing:2px !important}
+  /* abas: rolagem horizontal suave + compactas */
+  header nav, header .row + div{ -webkit-overflow-scrolling:touch; }
+  .tab{padding:10px 12px;font-size:14px;flex:0 0 auto}
 }
-@media(max-width:430px){
+@media(max-width:440px){
   .g2,.g3{grid-template-columns:1fr}
-  header img{height:36px !important}
+  .tab{padding:9px 10px;font-size:13px}
 }
 </style>
 </head>
@@ -438,8 +446,10 @@ const sb = CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase ? 
 const num = v => {
   if (v === "" || v == null) return 0;
   if (typeof v === "number") return v;
-  const n = parseFloat(String(v).replace(/\./g, "").replace(",", "."));
-  return isNaN(n) ? parseFloat(String(v).replace(",", ".")) || 0 : n;
+  let str = String(v).trim();
+  if (str.indexOf(",") > -1) str = str.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
 };
 const brl = v => num(v).toLocaleString("pt-BR", {
   style: "currency",
@@ -633,7 +643,7 @@ const emptyForm = () => ({
 });
 
 /* ── Persistencia (Supabase ou memoria) ── */
-const money = v => Number(String(v == null ? "0" : v).replace(/\./g, "").replace(",", ".")) || 0;
+const money = v => num(v);
 const toRow = t => ({
   tipo: t.tipo,
   data_viagem: viagemDate(t) || null,
@@ -717,6 +727,13 @@ async function deleteTrip(id) {
   } = await sb.from("viagens").delete().eq("id", id);
   if (error) console.error(error);
 }
+async function updateTripFull(id, t) {
+  if (!sb || typeof id === "number") return;
+  const {
+    error
+  } = await sb.from("viagens").update(toRow(t)).eq("id", id);
+  if (error) console.error(error);
+}
 
 /* ── Leitura por IA ── */
 async function extractAI(files, mode) {
@@ -793,6 +810,7 @@ async function extractAI(files, mode) {
 function App() {
   const [tab, setTab] = useState("emissao");
   const [trips, setTrips] = useState([]);
+  const [tripLoad, setTripLoad] = useState(null);
   const [orcamentos, setOrcamentos] = useState([]);
   useEffect(() => {
     listTrips().then(r => {
@@ -812,6 +830,14 @@ function App() {
   const handleDelete = id => {
     setTrips(p => p.filter(x => x.id !== id));
     deleteTrip(id).catch(() => {});
+  };
+  const handleUpdateTripFull = (id, t) => {
+    setTrips(p => p.map(x => x.id === id ? {
+      ...t,
+      id,
+      createdAt: x.createdAt
+    } : x));
+    updateTripFull(id, t).catch(() => {});
   };
   const handleSaveOrc = async o => {
     setOrcamentos(p => [o, ...p]);
@@ -919,7 +945,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     style: show("emissao")
   }, /*#__PURE__*/React.createElement(Emissao, {
-    onSave: handleSave
+    onSave: handleSave,
+    onUpdateFull: handleUpdateTripFull,
+    loadReq: tripLoad
   })), /*#__PURE__*/React.createElement("div", {
     style: show("orcamento")
   }, /*#__PURE__*/React.createElement(Orcamento, {
@@ -943,7 +971,14 @@ function App() {
     style: show("viagens")
   }, /*#__PURE__*/React.createElement(Viagens, {
     trips: trips,
-    onDelete: handleDelete
+    onDelete: handleDelete,
+    onEdit: t => {
+      setTripLoad({
+        ...t,
+        _ld: Date.now()
+      });
+      setTab("emissao");
+    }
   })), /*#__PURE__*/React.createElement("div", {
     style: show("agenda")
   }, /*#__PURE__*/React.createElement(Agenda, {
@@ -1452,13 +1487,25 @@ function extrasHTML(extras) {
   return h;
 }
 function Emissao({
-  onSave
+  onSave,
+  onUpdateFull,
+  loadReq
 }) {
   const [files, setFiles] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [flash, setFlash] = useState(false);
+  const [savedId, setSavedId] = useState(null);
+  useEffect(() => {
+    if (loadReq) {
+      setForm({
+        ...emptyForm(),
+        ...loadReq
+      });
+      setSavedId(loadReq.id || null);
+    }
+  }, [loadReq]);
   const [preview, setPreview] = useState(null);
   const fileRef = useRef();
   const set = p => setForm(f => ({
@@ -1539,24 +1586,51 @@ function Emissao({
       window.alert("Corrija antes de salvar:\n• " + _pb.join("\n• "));
       return;
     }
-    onSave({
-      ...form,
-      id: Date.now(),
-      createdAt: new Date().toISOString()
-    });
-    setForm(emptyForm());
-    setFiles([]);
-    setFlash(true);
-    setTimeout(() => setFlash(false), 2500);
+    if (savedId) {
+      onUpdateFull(savedId, form);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 2500);
+    } else {
+      onSave({
+        ...form,
+        id: Date.now(),
+        createdAt: new Date().toISOString()
+      });
+      setForm(emptyForm());
+      setFiles([]);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 2500);
+    }
   };
   const lucro = num(form.receita) - num(form.custo);
   const canSave = form.passageiros.some(p => p.trim()) && (hasAereo(form) && form.trechos.some(t => t.data) || hasHotel(form) && form.checkin || temExtra(form));
-  return /*#__PURE__*/React.createElement("div", {
-    className: "two"
-  }, /*#__PURE__*/React.createElement(FilePreview, {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FilePreview, {
     file: preview,
     onClose: () => setPreview(null)
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }), savedId && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: CREAM,
+      border: `1px solid ${GOLD}`,
+      borderRadius: 8,
+      padding: "8px 12px",
+      marginBottom: 12,
+      fontSize: 13,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u270F\uFE0F ", /*#__PURE__*/React.createElement("b", null, "Editando uma viagem salva"), " \u2014 clique em ", /*#__PURE__*/React.createElement("b", null, "Atualizar"), " pra gravar."), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: () => {
+      setForm(emptyForm());
+      setFiles([]);
+      setSavedId(null);
+    }
+  }, "\uFF0B Nova viagem")), /*#__PURE__*/React.createElement("div", {
+    className: "two"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "st"
@@ -2203,11 +2277,12 @@ function Emissao({
     className: "btn",
     onClick: save,
     disabled: !canSave
-  }, "\u2713 Salvar viagem & emitir"), /*#__PURE__*/React.createElement("button", {
+  }, savedId ? "✓ Atualizar viagem" : "✓ Salvar viagem & emitir"), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     onClick: () => {
       setForm(emptyForm());
       setFiles([]);
+      setSavedId(null);
     }
   }, "\uD83E\uDDF9 Limpar"), flash && /*#__PURE__*/React.createElement("span", {
     style: {
@@ -2234,7 +2309,7 @@ function Emissao({
       fontSize: 12,
       marginTop: 8
     }
-  }, "Na versao final o PDF sai do seu ReportLab. Aqui e a previa visual.")));
+  }, "Na versao final o PDF sai do seu ReportLab. Aqui e a previa visual."))));
 }
 
 /* ── Voucher ── */
@@ -2654,7 +2729,8 @@ function Voucher({
 /* ── Viagens / Agenda / Relatorios ── */
 function Viagens({
   trips,
-  onDelete
+  onDelete,
+  onEdit
 }) {
   const [fMes, setFMes] = useState("todos");
   if (!trips.length) return /*#__PURE__*/React.createElement(Empty, {
@@ -2759,6 +2835,9 @@ function Viagens({
         color: lucro >= 0 ? GREEN : "#B4472E"
       }
     }, brl(lucro))), /*#__PURE__*/React.createElement("button", {
+      className: "ghost",
+      onClick: () => onEdit(t)
+    }, "\u270F\uFE0F Editar"), /*#__PURE__*/React.createElement("button", {
       className: "ghost",
       onClick: () => printVoucher(t)
     }, "\uD83D\uDDA8\uFE0F"), /*#__PURE__*/React.createElement("button", {
@@ -4090,7 +4169,10 @@ function Orcamento({
   const [savedId, setSavedId] = useState(null);
   useEffect(() => {
     if (loadReq) {
-      setForm(loadReq);
+      setForm({
+        ...emptyOrc(),
+        ...loadReq
+      });
       setSavedId(loadReq.id || null);
     }
   }, [loadReq]);
