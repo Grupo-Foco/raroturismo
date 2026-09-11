@@ -2470,7 +2470,7 @@ function Emissao({
     className: "in",
     value: p,
     placeholder: "Nome completo",
-    onChange: e => upd("passageiros", i, e.target.value)
+    onChange: e => upd("passageiros", i, e.target.value.toUpperCase())
   }), form.passageiros.length > 1 && /*#__PURE__*/React.createElement("button", {
     className: "icn",
     onClick: () => set({
@@ -2586,14 +2586,14 @@ function Emissao({
     value: t.origem,
     placeholder: "Origem",
     onChange: e => updT(i, {
-      origem: e.target.value
+      origem: e.target.value.toUpperCase()
     })
   }), /*#__PURE__*/React.createElement("input", {
     className: "in",
     value: t.destino,
     placeholder: "Destino",
     onChange: e => updT(i, {
-      destino: e.target.value
+      destino: e.target.value.toUpperCase()
     })
   }), /*#__PURE__*/React.createElement("input", {
     className: "in",
@@ -2736,7 +2736,7 @@ function Emissao({
     value: form.observacoes,
     placeholder: "Ex.: Ida com conexao em Casablanca\u2026",
     onChange: e => set({
-      observacoes: e.target.value
+      observacoes: e.target.value.toUpperCase()
     })
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2843,7 +2843,7 @@ function Emissao({
     value: form.observacoesHotel,
     placeholder: "Ex.: Hotel n\xE3o reembols\xE1vel em caso de altera\xE7\xE3o.",
     onChange: e => set({
-      observacoesHotel: e.target.value
+      observacoesHotel: e.target.value.toUpperCase()
     })
   }))))), /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -2943,16 +2943,26 @@ function Emissao({
     value: "site_companhia"
   }, "Site da companhia"), /*#__PURE__*/React.createElement("option", {
     value: "outros"
-  }, "Outros sites")))), form.emissao === "milhas" && /*#__PURE__*/React.createElement("div", {
+  }, "Outros sites")))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10
     }
   }, /*#__PURE__*/React.createElement(Field, {
-    label: "Fornecedor das milhas"
+    label: {
+      milhas: "Fornecedor das milhas",
+      consolidadora: "Consolidadora",
+      site_companhia: "Site / companhia",
+      outros: "Detalhe da emissão"
+    }[form.emissao] || "Detalhe da emissão"
   }, /*#__PURE__*/React.createElement("input", {
     className: "in",
     value: form.fornecedorMilhas,
-    placeholder: "Azul, Smiles, Livelo\u2026",
+    placeholder: {
+      milhas: "Azul, Smiles, Livelo…",
+      consolidadora: "Nome da consolidadora",
+      site_companhia: "Companhia aérea",
+      outros: "Descreva a emissão"
+    }[form.emissao] || "",
     onChange: e => set({
       fornecedorMilhas: e.target.value
     })
@@ -5332,7 +5342,7 @@ function Orcamento({
     value: form.cliente,
     placeholder: "Nome do cliente",
     onChange: e => set({
-      cliente: e.target.value
+      cliente: e.target.value.toUpperCase()
     })
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -5473,14 +5483,14 @@ function Orcamento({
     value: t.origem,
     placeholder: "Origem (GYN)",
     onChange: e => updT(i, {
-      origem: e.target.value
+      origem: e.target.value.toUpperCase()
     })
   }), /*#__PURE__*/React.createElement("input", {
     className: "in",
     value: t.destino,
     placeholder: "Destino (REC)",
     onChange: e => updT(i, {
-      destino: e.target.value
+      destino: e.target.value.toUpperCase()
     })
   })), /*#__PURE__*/React.createElement("div", {
     className: "g3",
@@ -5767,7 +5777,7 @@ function Orcamento({
     value: form.observacoes,
     placeholder: "Ex.: TEMOS V\xC1RIOS TIPOS DE ACOMODA\xC7\xC3O",
     onChange: e => set({
-      observacoes: e.target.value
+      observacoes: e.target.value.toUpperCase()
     })
   }))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "row",
