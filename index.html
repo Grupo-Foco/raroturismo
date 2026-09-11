@@ -534,6 +534,79 @@ const chegDate = s => {
   }
   return fmtDate(s.data);
 };
+const chipsOf = bag => {
+  const b = bag || {};
+  const c = [];
+  if (b.itemPessoal) c.push(["1 item pessoal", false]);
+  if (b.mao > 0) c.push([b.mao + " bag. de mão", false]);
+  c.push([b.despachada > 0 ? b.despachada + " bagagem despachada" : "sem bagagem despachada", !(b.despachada > 0)]);
+  return c;
+};
+function BagControls({
+  bag,
+  onChange
+}) {
+  const bg = bag || {
+    itemPessoal: true,
+    mao: 1,
+    despachada: 0
+  };
+  const cs = on => ({
+    padding: "5px 9px",
+    borderRadius: 7,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    border: "1px solid " + (on ? GREEN : LINE),
+    background: on ? GREEN : "#fff",
+    color: on ? "#fff" : GREEN
+  });
+  const step = (key, icon, label) => /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4,
+      fontSize: 12
+    }
+  }, icon, " ", label, /*#__PURE__*/React.createElement("button", {
+    className: "icn",
+    style: {
+      padding: "1px 7px"
+    },
+    onClick: () => onChange({
+      ...bg,
+      [key]: Math.max(0, (+bg[key] || 0) - 1)
+    })
+  }, "\u2212"), /*#__PURE__*/React.createElement("b", {
+    style: {
+      minWidth: 12,
+      textAlign: "center"
+    }
+  }, +bg[key] || 0), /*#__PURE__*/React.createElement("button", {
+    className: "icn",
+    style: {
+      padding: "1px 7px"
+    },
+    onClick: () => onChange({
+      ...bg,
+      [key]: (+bg[key] || 0) + 1
+    })
+  }, "+"));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange({
+      ...bg,
+      itemPessoal: !bg.itemPessoal
+    }),
+    style: cs(bg.itemPessoal)
+  }, "\uD83D\uDC5C Item pessoal"), step("mao", "🎒", "Mão:"), step("despachada", "🧳", "Despachada:"));
+}
 const paradasFmt = pv => {
   if (pv === "" || pv == null) return "—";
   const t = String(pv).trim();
@@ -626,6 +699,11 @@ const emptyForm = () => ({
     duracao: "",
     paradas: "",
     maisDias: 0,
+    bag: {
+      itemPessoal: true,
+      mao: 1,
+      despachada: 0
+    },
     direcao: "ida"
   }],
   bag: {
@@ -945,6 +1023,12 @@ function Cotacoes({
     pacote: "Pacote",
     servicos: "Serviços"
   };
+  const CIC = {
+    aereo: "✈️",
+    hotel: "🏨",
+    pacote: "📦",
+    servicos: "🎫"
+  };
   const filtered = cotacoes.filter(c => (fNome === "" || (c.nome || "").toLowerCase().indexOf(fNome.toLowerCase()) > -1) && (fTipo === "todos" || c.tipo === fTipo));
   const periodo = c => c.periodoIni || c.periodoFim ? fmtDate(c.periodoIni) + " a " + fmtDate(c.periodoFim) : "";
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -1160,7 +1244,12 @@ function Cotacoes({
     style: {
       fontWeight: 700
     }
-  }, c.nome || "(sem nome)", " ", /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginRight: 6
+    },
+    title: TL[c.tipo] || c.tipo
+  }, CIC[c.tipo] || "🗒️"), c.nome || "(sem nome)", " ", /*#__PURE__*/React.createElement("span", {
     className: "mut",
     style: {
       fontWeight: 400,
@@ -1197,8 +1286,83 @@ function Cotacoes({
     }
   }, "\uD83D\uDDD1\uFE0F"))))));
 }
+function Home({
+  go
+}) {
+  const cards = [["emissao", "🎫", "Emissão de voucher", "Aéreo, hotel, pacote e serviços"], ["cotacoes", "🗒️", "Cotações", "Registrar pedidos de orçamento"], ["orcamento", "🧾", "Orçamento", "Proposta profissional pro cliente"], ["salvos", "🗂️", "Orçamentos salvos", "Controle de vendas e status"], ["viagens", "📄", "Viagens emitidas", "Histórico, editar e reimprimir"], ["agenda", "📅", "Agenda", "Lembretes de embarque e check-in"], ["relatorios", "📊", "Relatórios", "Faturamento, custo, lucro e margem"]];
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: GREEN,
+      color: "#fff",
+      borderRadius: 16,
+      padding: "22px 20px",
+      marginBottom: 18,
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: LOGO,
+    style: {
+      height: 52,
+      borderRadius: 8
+    }
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 800,
+      letterSpacing: 1
+    }
+  }, "RaRo Turismo"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      opacity: .85,
+      fontSize: 14
+    }
+  }, "O que vamos fazer hoje?"))), /*#__PURE__*/React.createElement("div", {
+    className: "g2"
+  }, cards.map(([k, ic, t, sub]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => go(k),
+    style: {
+      textAlign: "left",
+      cursor: "pointer",
+      background: "#fff",
+      border: `1px solid ${LINE}`,
+      borderRadius: 14,
+      padding: 16,
+      display: "flex",
+      gap: 14,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 26,
+      width: 44,
+      height: 44,
+      minWidth: 44,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: CREAM,
+      borderRadius: 12
+    }
+  }, ic), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 800,
+      color: GREEN,
+      fontSize: 16
+    }
+  }, t), /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 13,
+      marginTop: 2
+    }
+  }, sub))))));
+}
 function App() {
-  const [tab, setTab] = useState("emissao");
+  const [tab, setTab] = useState("inicio");
   const [trips, setTrips] = useState([]);
   const [tripLoad, setTripLoad] = useState(null);
   const [orcamentos, setOrcamentos] = useState([]);
@@ -1295,6 +1459,11 @@ function App() {
       paradas: "",
       cabine: "Econômica",
       maisDias: 0,
+      bag: {
+        itemPessoal: true,
+        mao: 1,
+        despachada: 0
+      },
       direcao: "ida"
     }, {
       origem: c.destino || "",
@@ -1328,7 +1497,7 @@ function App() {
     const dias = Math.round((addDays(vd, -3) - _t0) / 86400000);
     return dias <= 0 && _t0 <= vd;
   }).length;
-  const tabs = [["emissao", "🎫 Emissão"], ["cotacoes", "🗒️ Cotações"], ["orcamento", "🧾 Orçamento"], ["salvos", "🗂️ Salvos"], ["viagens", "📄 Viagens"], ["agenda", "📅 Agenda"], ["relatorios", "📊 Relatórios"]];
+  const tabs = [["inicio", "🏠 Início"], ["emissao", "🎫 Emissão"], ["cotacoes", "🗒️ Cotações"], ["orcamento", "🧾 Orçamento"], ["salvos", "🗂️ Salvos"], ["viagens", "📄 Viagens"], ["agenda", "📅 Agenda"], ["relatorios", "📊 Relatórios"]];
   const show = id => ({
     display: tab === id ? "block" : "none"
   });
@@ -1396,6 +1565,10 @@ function App() {
       padding: "18px 16px 40px"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    style: show("inicio")
+  }, /*#__PURE__*/React.createElement(Home, {
+    go: setTab
+  })), /*#__PURE__*/React.createElement("div", {
     style: show("emissao")
   }, /*#__PURE__*/React.createElement(Emissao, {
     onSave: handleSave,
@@ -2049,7 +2222,14 @@ function Emissao({
         passageiros: p.passageiros && p.passageiros.length ? p.passageiros : [""],
         companhia: p.companhia || "",
         localizador: p.localizador || "",
-        trechos: trechos.length ? trechos : emptyForm().trechos,
+        trechos: (trechos.length ? trechos : emptyForm().trechos).map(x => ({
+          ...x,
+          bag: x.bag || p.bag || {
+            itemPessoal: true,
+            mao: 1,
+            despachada: 0
+          }
+        })),
         bag: p.bag || {
           itemPessoal: true,
           mao: 1,
@@ -2502,6 +2682,23 @@ function Emissao({
     onChange: e => updT(i, {
       paradas: e.target.value
     })
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      paddingTop: 10,
+      borderTop: `1px dashed ${LINE}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 11,
+      marginBottom: 6
+    }
+  }, "\uD83E\uDDF3 Bagagem deste voo"), /*#__PURE__*/React.createElement(BagControls, {
+    bag: t.bag,
+    onChange: b => updT(i, {
+      bag: b
+    })
   })))), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     onClick: () => {
@@ -2519,6 +2716,11 @@ function Emissao({
           duracao: "",
           paradas: "",
           maisDias: 0,
+          bag: {
+            itemPessoal: true,
+            mao: 1,
+            despachada: 0
+          },
           direcao: _v ? "volta" : "ida"
         }]
       });
@@ -2538,58 +2740,11 @@ function Emissao({
     })
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
+      marginTop: 12,
       fontSize: 12,
-      color: MUTED,
-      fontWeight: 600,
-      marginBottom: 6
+      color: MUTED
     }
-  }, "Bagagem inclusa (aparece no voucher)"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => set({
-      bag: {
-        ...form.bag,
-        itemPessoal: !form.bag.itemPessoal
-      }
-    }),
-    style: {
-      padding: "7px 12px",
-      borderRadius: 8,
-      fontWeight: 600,
-      fontSize: 13,
-      cursor: "pointer",
-      border: `1px solid ${form.bag.itemPessoal ? GREEN : LINE}`,
-      background: form.bag.itemPessoal ? GREEN : "#fff",
-      color: form.bag.itemPessoal ? "#fff" : GREEN
-    }
-  }, "\uD83D\uDC5C Item pessoal"), /*#__PURE__*/React.createElement(BagStepper, {
-    label: "\uD83C\uDF92 Bag. de m\xE3o",
-    val: form.bag.mao,
-    onChange: v => set({
-      bag: {
-        ...form.bag,
-        mao: v
-      }
-    })
-  }), /*#__PURE__*/React.createElement(BagStepper, {
-    label: "\uD83E\uDDF3 Bag. despachada",
-    val: form.bag.despachada,
-    onChange: v => set({
-      bag: {
-        ...form.bag,
-        despachada: v
-      }
-    })
-  })))), hasHotel(form) && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDF3 A bagagem agora \xE9 definida ", /*#__PURE__*/React.createElement("b", null, "por voo"), " (em cada trecho acima).")), hasHotel(form) && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: `1px dashed ${LINE}`,
       paddingTop: 14
@@ -3101,15 +3256,26 @@ function Voucher({
       marginTop: 8,
       lineHeight: 1.5
     }
-  }, "\xBB ", notes), bagChips.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "\xBB ", notes), [...idas, ...voltas].map((s, li) => /*#__PURE__*/React.createElement("div", {
+    key: li,
     style: {
-      marginTop: 6
+      marginTop: 6,
+      fontSize: 10,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      flexWrap: "wrap"
     }
-  }, bagChips.map((c, i) => /*#__PURE__*/React.createElement(Chip, {
-    key: i,
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: GREEN,
+      fontSize: 9
+    }
+  }, (s.direcao === "volta" ? "VOLTA" : "IDA") + " " + (s.origem || "") + "→" + (s.destino || ""), ":"), chipsOf(s.bag).map((c, j) => /*#__PURE__*/React.createElement(Chip, {
+    key: j,
     txt: c[0],
     red: c[1]
-  })))), hasHotel(t) && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Barr, null, "HOSPEDAGEM"), /*#__PURE__*/React.createElement("div", {
+  }))))), hasHotel(t) && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Barr, null, "HOSPEDAGEM"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700
@@ -3873,9 +4039,12 @@ function printVoucher(t) {
     const ida = s.direcao === "ida";
     return `<tr style="background:${ida ? "#F1F6F2" : "#FBF6E8"}"><td style="padding:6px;border-left:3px solid ${ida ? GREEN : GOLD};font-weight:700;color:${ida ? GREEN : "#9A7B1F"};font-size:11px">${ida ? "IDA" : "VOLTA"}</td><td style="padding:6px;font-weight:700;font-size:11px">${normVoo(s.voo) || "—"}</td><td style="padding:6px;font-size:11px">${s.origem || "—"}</td><td style="padding:6px;font-size:11px">${s.destino || "—"}</td><td style="padding:6px;font-size:11px">${fmtDate(s.data)}</td><td style="padding:6px;font-size:11px">${s.saida || "—"}</td><td style="padding:6px;font-size:11px">${s.chegada || "—"}${arrExtra(s) > 0 ? '<sup style="color:#9A7B1F;font-weight:700;font-size:8px">+' + arrExtra(s) + '</sup>' : ""}</td><td style="padding:6px;font-size:11px">${s.cabine || "—"}</td><td style="padding:6px;font-size:11px">${durOf(s)}</td><td style="padding:6px;font-size:11px">${paradasFmt(s.paradas)}</td></tr>`;
   };
-  const aereo = hasAereo(t) ? bar("ITINERÁRIO") + `<table style="width:100%;border-collapse:collapse"><tr><th></th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">VOO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">ORIGEM</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DESTINO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DATA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">SAÍDA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CHEG.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CABINE</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DUR.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">PARADAS</th></tr>${[...idas, ...voltas].map(rowT).join("")}</table>${notes ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${notes}</div>` : ""}${bagChips.length ? '<div style="margin-top:6px">' + bagChips.map(function (c) {
-    return '<span style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;background:' + (c[1] ? "#FBECE8" : "#EEF4EF") + ';color:' + (c[1] ? "#B4472E" : GREEN) + ';border:1px solid ' + (c[1] ? "#EAD0C8" : "#D6E4DA") + ';margin:0 6px 4px 0">' + c[0] + '</span>';
-  }).join("") + '</div>' : ""}` : "";
+  const aereo = hasAereo(t) ? bar("ITINERÁRIO") + `<table style="width:100%;border-collapse:collapse"><tr><th></th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">VOO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">ORIGEM</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DESTINO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DATA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">SAÍDA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CHEG.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CABINE</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DUR.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">PARADAS</th></tr>${[...idas, ...voltas].map(rowT).join("")}</table>${notes ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${notes}</div>` : ""}${[...idas, ...voltas].map(function (s) {
+    var ch = chipsOf(s.bag);
+    return '<div style="margin-top:6px;font-size:10px"><b style="color:' + GREEN + '">' + ((s.direcao === "volta" ? "VOLTA " : "IDA ") + (s.origem || "") + "→" + (s.destino || "")) + ':</b> ' + ch.map(function (c) {
+      return '<span style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;background:' + (c[1] ? "#FBECE8" : "#EEF4EF") + ';color:' + (c[1] ? "#B4472E" : GREEN) + ';border:1px solid ' + (c[1] ? "#EAD0C8" : "#D6E4DA") + ';margin:0 6px 4px 0">' + c[0] + '</span>';
+    }).join("") + '</div>';
+  }).join("")}` : "";
   const hotel = hasHotel(t) ? bar("HOSPEDAGEM") + `<div style="font-weight:700">${t.hotelNome || "—"}</div><div style="font-size:11px;color:#6B7A70;margin-bottom:6px">${t.hotelEndereco || ""}</div><div style="display:flex;gap:10px;margin-top:6px"><div style="flex:1;background:#F1F6F2;border-left:3px solid ${GREEN};border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-IN</div><div style="font-weight:700">${fmtDate(t.checkin)}</div></div><div style="display:flex;align-items:center"><span style="background:${GOLD};color:${GREEN};font-weight:700;font-size:11px;padding:3px 8px;border-radius:20px">${n} ${n === 1 ? "noite" : "noites"}</span></div><div style="flex:1;background:#FBF6E8;border-left:3px solid ${GOLD};border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-OUT</div><div style="font-weight:700">${fmtDate(t.checkout)}</div></div></div>${t.apartamentos.filter(a => a.trim()).length ? `<div style="margin-top:8px"><div style="font-size:9px;color:#6B7A70;font-weight:700">ACOMODAÇÃO</div>${t.apartamentos.filter(a => a.trim()).map(a => `<div style="font-weight:600;font-size:12px">• ${a}</div>`).join("")}</div>` : ""}${t.observacoesHotel ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${t.observacoesHotel}</div>` : ""}` : "";
   const paxRows = pax.map((p, i) => `<div style="display:flex;gap:12px;padding:5px 6px;background:${i % 2 ? "#FAFAF6" : "#fff"};font-size:12px"><span style="color:#6B7A70;font-weight:700;min-width:44px">Pax ${i + 1}</span><span style="font-weight:600">${p}</span></div>`).join("");
   const imp = hasAereo(t) ? `<div style="margin-top:12px;background:${CREAM};border-left:3px solid ${GOLD};padding:8px 10px;border-radius:4px;font-size:10.5px;color:#5A4A1E"><b>IMPORTANTE:</b> ${IMPORTANTE_AÉREO}</div>` : "";
@@ -4000,6 +4169,11 @@ function emptyOrc() {
       paradas: "",
       cabine: "Econômica",
       maisDias: 0,
+      bag: {
+        itemPessoal: true,
+        mao: 1,
+        despachada: 0
+      },
       direcao: "ida"
     }],
     bag: {
@@ -4272,15 +4446,25 @@ function OrcamentoDoc({
   })), hasAereo(t) && /*#__PURE__*/React.createElement("div", null, [...idas, ...voltas].map((s, i) => /*#__PURE__*/React.createElement(FlightCard, {
     key: i,
     s: s
-  })), bagChips.length > 0 && /*#__PURE__*/React.createElement("div", {
+  })), [...idas, ...voltas].map((s, li) => /*#__PURE__*/React.createElement("div", {
+    key: li,
     style: {
-      marginBottom: 6
+      marginBottom: 6,
+      fontSize: 11,
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      alignItems: "center"
     }
-  }, bagChips.map((c, i) => /*#__PURE__*/React.createElement(Chip, {
-    key: i,
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: GREEN
+    }
+  }, s.direcao === "volta" ? "Volta" : "Ida", ":"), chipsOf(s.bag).map((c, j) => /*#__PURE__*/React.createElement(Chip, {
+    key: j,
     txt: c[0],
     red: c[1]
-  })))), hasHotel(t) && /*#__PURE__*/React.createElement("div", {
+  }))))), hasHotel(t) && /*#__PURE__*/React.createElement("div", {
     style: {
       border: `1px solid ${LINE}`,
       borderRadius: 10,
@@ -4446,9 +4630,12 @@ function printOrcamento(t) {
     const ida = s.direcao === "ida";
     return `<div style="border:1px solid ${LINE};border-radius:10px;overflow:hidden;margin-bottom:7px"><div style="background:${ida ? "#F1F6F2" : "#FBF6E8"};padding:6px 14px"><b style="font-size:11px;color:${ida ? GREEN : "#9A7B1F"}">${ida ? "→ VOO DE IDA" : "← VOO DE VOLTA"}</b> <span style="font-size:11px;color:#6B7A70">${s.cabine || "Econômica"}</span></div><div style="padding:8px 14px"><div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:2px">${s.origem || "—"} <span style="color:${GOLD}">✈</span> ${s.destino || "—"}</div><div style="display:flex;justify-content:space-around;margin-top:8px;gap:8px">${metaC("Partida", fmtDate(s.data) + (s.saida ? " " + s.saida : ""))}${metaC("Chegada", s.chegada ? chegDate(s) + " " + s.chegada + (arrExtra(s) > 0 ? '<sup style="color:#9A7B1F;font-weight:700;font-size:9px">+' + arrExtra(s) + '</sup>' : "") : "—")}${metaC("Duração", durOf(s))}${metaC("Paradas", paradasFmt(s.paradas))}</div></div></div>`;
   };
-  const voos = hasAereo(t) ? [...idas, ...voltas].map(fcard).join("") + (bagChips.length ? `<div style="margin-bottom:6px">${bagChips.map(function (c) {
-    return chip(c[0], c[1]);
-  }).join("")}</div>` : "") : "";
+  const voos = hasAereo(t) ? [...idas, ...voltas].map(fcard).join("") + [...idas, ...voltas].map(function (s) {
+    var ch = chipsOf(s.bag);
+    return '<div style="margin-bottom:6px;font-size:11px"><b style="color:' + GREEN + '">' + (s.direcao === "volta" ? "Volta" : "Ida") + ':</b> ' + ch.map(function (c) {
+      return chip(c[0], c[1]);
+    }).join("") + '</div>';
+  }).join("") : "";
   const hotel = hasHotel(t) ? `<div style="border:1px solid ${LINE};border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-weight:800;font-size:11px;color:${GREEN};margin-bottom:4px">HOSPEDAGEM</div><div style="font-weight:700">${t.hotelNome || "—"}</div><div style="font-size:11px;color:#6B7A70">${t.hotelEndereco || ""}</div><div style="display:flex;gap:14px;margin-top:8px">${meta("Check-in", fmtDate(t.checkin))}${meta("Check-out", fmtDate(t.checkout))}${n > 0 ? meta("Noites", String(n)) : ""}</div>${t.apartamentos.filter(a => a.trim()).length ? `<div style="margin-top:6px;font-size:12px">${t.apartamentos.filter(a => a.trim()).map(a => `<div>• ${a}</div>`).join("")}</div>` : ""}${t.fotosHotel.length ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${t.fotosHotel.map(f => `<img src="${f}" style="width:84px;height:58px;object-fit:cover;border-radius:6px"/>`).join("")}</div>` : ""}</div>` : "";
   const heroImg = t.fotosDestino[0] ? `<img src="${t.fotosDestino[0]}" style="width:100%;height:120px;object-fit:cover;display:block"/>` : "";
   const galeria = t.fotosDestino.length > 1 ? `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">${t.fotosDestino.slice(1).map(f => `<img src="${f}" style="width:90px;height:62px;object-fit:cover;border-radius:6px"/>`).join("")}</div>` : "";
@@ -4899,7 +5086,14 @@ function Orcamento({
         passageiros: p.passageiros || "1 Adulto",
         tipo,
         companhia: p.companhia || "",
-        trechos: trechos.length ? trechos : emptyOrc().trechos,
+        trechos: (trechos.length ? trechos : emptyOrc().trechos).map(x => ({
+          ...x,
+          bag: x.bag || p.bag || {
+            itemPessoal: true,
+            mao: 1,
+            despachada: 0
+          }
+        })),
         bag: p.bag || {
           itemPessoal: true,
           mao: 1,
@@ -5377,7 +5571,24 @@ function Orcamento({
     value: 2
   }, "+2 dias"), /*#__PURE__*/React.createElement("option", {
     value: 3
-  }, "+3 dias"))))), /*#__PURE__*/React.createElement("button", {
+  }, "+3 dias"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      paddingTop: 10,
+      borderTop: `1px dashed ${LINE}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 11,
+      marginBottom: 6
+    }
+  }, "\uD83E\uDDF3 Bagagem deste voo"), /*#__PURE__*/React.createElement(BagControls, {
+    bag: t.bag,
+    onChange: b => updT(i, {
+      bag: b
+    })
+  })))), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     onClick: () => {
       const _i = form.trechos.find(x => x.direcao === "ida") || form.trechos[0] || {};
@@ -5393,64 +5604,22 @@ function Orcamento({
           paradas: "",
           cabine: _i.cabine || "Econômica",
           maisDias: 0,
+          bag: {
+            itemPessoal: true,
+            mao: 1,
+            despachada: 0
+          },
           direcao: _v ? "volta" : "ida"
         }]
       });
     }
   }, "\uFF0B Trecho"), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
+      marginTop: 10,
       fontSize: 12,
-      color: MUTED,
-      fontWeight: 600,
-      marginBottom: 6
+      color: MUTED
     }
-  }, "Bagagem inclusa"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => set({
-      bag: {
-        ...form.bag,
-        itemPessoal: !form.bag.itemPessoal
-      }
-    }),
-    style: {
-      padding: "7px 12px",
-      borderRadius: 8,
-      fontWeight: 600,
-      fontSize: 13,
-      cursor: "pointer",
-      border: `1px solid ${form.bag.itemPessoal ? GREEN : LINE}`,
-      background: form.bag.itemPessoal ? GREEN : "#fff",
-      color: form.bag.itemPessoal ? "#fff" : GREEN
-    }
-  }, "\uD83D\uDC5C Item pessoal"), /*#__PURE__*/React.createElement(BagStepper, {
-    label: "\uD83C\uDF92 Bag. de m\xE3o",
-    val: form.bag.mao,
-    onChange: v => set({
-      bag: {
-        ...form.bag,
-        mao: v
-      }
-    })
-  }), /*#__PURE__*/React.createElement(BagStepper, {
-    label: "\uD83E\uDDF3 Bag. despachada",
-    val: form.bag.despachada,
-    onChange: v => set({
-      bag: {
-        ...form.bag,
-        despachada: v
-      }
-    })
-  })))), hasHotel(form) && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDF3 A bagagem agora \xE9 definida ", /*#__PURE__*/React.createElement("b", null, "por voo"), " (em cada trecho acima).")), hasHotel(form) && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: `1px dashed ${LINE}`,
       paddingTop: 12
