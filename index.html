@@ -1644,19 +1644,56 @@ function ConfigBar() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "wrap",
     style: {
-      padding: "8px 16px",
+      padding: "5px 16px",
       display: "flex",
       alignItems: "center",
-      gap: 8,
-      flexWrap: "wrap"
+      justifyContent: "flex-end",
+      gap: 12
     }
-  }, chip(sb ? "Banco: Supabase" : "Banco: memória (teste)", !!sb), chip("IA: " + iaMode, !!(CONFIG.EXTRACT_URL || RT.localKey)), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", {
+    title: sb ? "Banco: Supabase (conectado)" : "Banco: memória — dados só neste navegador",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5,
+      fontSize: 11,
+      color: MUTED
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      display: "inline-block",
+      background: sb ? "#2E7D46" : "#C9A227"
+    }
+  }), "Banco"), /*#__PURE__*/React.createElement("span", {
+    title: "IA: " + iaMode,
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5,
+      fontSize: 11,
+      color: MUTED
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      display: "inline-block",
+      background: CONFIG.EXTRACT_URL || RT.localKey ? "#2E7D46" : "#C9A227"
+    }
+  }), "IA"), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     style: {
-      marginLeft: "auto"
+      padding: "3px 9px",
+      fontSize: 14,
+      lineHeight: 1
     },
+    title: "Configura\xE7\xF5es e status",
     onClick: () => setOpen(!open)
-  }, "\u2699\uFE0F Config de teste")), open && /*#__PURE__*/React.createElement("div", {
+  }, "\u2699\uFE0F")), open && /*#__PURE__*/React.createElement("div", {
     className: "wrap",
     style: {
       padding: "0 16px 12px"
@@ -1670,6 +1707,13 @@ function ConfigBar() {
       fontSize: 13
     }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8,
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, chip(sb ? "Banco: Supabase" : "Banco: memória (teste)", !!sb), chip("IA: " + iaMode, !!(CONFIG.EXTRACT_URL || RT.localKey))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 6
     }
