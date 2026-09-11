@@ -517,12 +517,18 @@ const isNextDay = (saida, chegada) => {
   if (sp.length < 2 || cp.length < 2) return false;
   return +cp[0] * 60 + +cp[1] < +sp[0] * 60 + +sp[1];
 };
+const arrExtra = s => {
+  const m = parseInt(s && s.maisDias) || 0;
+  if (m > 0) return m;
+  return isNextDay(s.saida, s.chegada) ? 1 : 0;
+};
 const chegDate = s => {
   if (!s.data) return "";
-  if (isNextDay(s.saida, s.chegada)) {
+  const ex = arrExtra(s);
+  if (ex > 0) {
     const d = parseDate(s.data);
     if (d) {
-      d.setDate(d.getDate() + 1);
+      d.setDate(d.getDate() + ex);
       return d.toLocaleDateString("pt-BR");
     }
   }
@@ -619,6 +625,7 @@ const emptyForm = () => ({
     cabine: "",
     duracao: "",
     paradas: "",
+    maisDias: 0,
     direcao: "ida"
   }],
   bag: {
@@ -1287,6 +1294,7 @@ function App() {
       duracao: "",
       paradas: "",
       cabine: "Econômica",
+      maisDias: 0,
       direcao: "ida"
     }, {
       origem: c.destino || "",
@@ -2439,7 +2447,36 @@ function Emissao({
       if (t.saida && _c) _p.duracao = calcDur(t.data, t.saida, _c);
       updT(i, _p);
     }
-  })), /*#__PURE__*/React.createElement("input", {
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: "8px 0",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mut"
+  }, "Chegada em:"), /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 13,
+      padding: "4px 8px"
+    },
+    value: t.maisDias || 0,
+    onChange: e => updT(i, {
+      maisDias: +e.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: 0
+  }, "mesmo dia / auto"), /*#__PURE__*/React.createElement("option", {
+    value: 1
+  }, "+1 dia"), /*#__PURE__*/React.createElement("option", {
+    value: 2
+  }, "+2 dias"), /*#__PURE__*/React.createElement("option", {
+    value: 3
+  }, "+3 dias"))), /*#__PURE__*/React.createElement("input", {
     className: "in",
     value: t.cabine,
     placeholder: "Cabine (Econ\xF4mica)",
@@ -2481,6 +2518,7 @@ function Emissao({
           cabine: _i.cabine || "",
           duracao: "",
           paradas: "",
+          maisDias: 0,
           direcao: _v ? "volta" : "ida"
         }]
       });
@@ -3042,13 +3080,13 @@ function Voucher({
       style: td
     }, s.saida || "—"), /*#__PURE__*/React.createElement("td", {
       style: td
-    }, s.chegada || "—", isNextDay(s.saida, s.chegada) && /*#__PURE__*/React.createElement("sup", {
+    }, s.chegada || "—", arrExtra(s) > 0 && /*#__PURE__*/React.createElement("sup", {
       style: {
         color: "#9A7B1F",
         fontWeight: 700,
         fontSize: 8
       }
-    }, "+1")), /*#__PURE__*/React.createElement("td", {
+    }, "+", arrExtra(s))), /*#__PURE__*/React.createElement("td", {
       style: td
     }, s.cabine || "—"), /*#__PURE__*/React.createElement("td", {
       style: td
@@ -3833,7 +3871,7 @@ function printVoucher(t) {
   const bar = x => `<div style="background:${GREEN};color:#fff;font-size:11px;font-weight:700;padding:6px 10px;border-radius:4px;margin:16px 0 8px">${x}</div>`;
   const rowT = s => {
     const ida = s.direcao === "ida";
-    return `<tr style="background:${ida ? "#F1F6F2" : "#FBF6E8"}"><td style="padding:6px;border-left:3px solid ${ida ? GREEN : GOLD};font-weight:700;color:${ida ? GREEN : "#9A7B1F"};font-size:11px">${ida ? "IDA" : "VOLTA"}</td><td style="padding:6px;font-weight:700;font-size:11px">${normVoo(s.voo) || "—"}</td><td style="padding:6px;font-size:11px">${s.origem || "—"}</td><td style="padding:6px;font-size:11px">${s.destino || "—"}</td><td style="padding:6px;font-size:11px">${fmtDate(s.data)}</td><td style="padding:6px;font-size:11px">${s.saida || "—"}</td><td style="padding:6px;font-size:11px">${s.chegada || "—"}${isNextDay(s.saida, s.chegada) ? '<sup style="color:#9A7B1F;font-weight:700;font-size:8px">+1</sup>' : ""}</td><td style="padding:6px;font-size:11px">${s.cabine || "—"}</td><td style="padding:6px;font-size:11px">${durOf(s)}</td><td style="padding:6px;font-size:11px">${paradasFmt(s.paradas)}</td></tr>`;
+    return `<tr style="background:${ida ? "#F1F6F2" : "#FBF6E8"}"><td style="padding:6px;border-left:3px solid ${ida ? GREEN : GOLD};font-weight:700;color:${ida ? GREEN : "#9A7B1F"};font-size:11px">${ida ? "IDA" : "VOLTA"}</td><td style="padding:6px;font-weight:700;font-size:11px">${normVoo(s.voo) || "—"}</td><td style="padding:6px;font-size:11px">${s.origem || "—"}</td><td style="padding:6px;font-size:11px">${s.destino || "—"}</td><td style="padding:6px;font-size:11px">${fmtDate(s.data)}</td><td style="padding:6px;font-size:11px">${s.saida || "—"}</td><td style="padding:6px;font-size:11px">${s.chegada || "—"}${arrExtra(s) > 0 ? '<sup style="color:#9A7B1F;font-weight:700;font-size:8px">+' + arrExtra(s) + '</sup>' : ""}</td><td style="padding:6px;font-size:11px">${s.cabine || "—"}</td><td style="padding:6px;font-size:11px">${durOf(s)}</td><td style="padding:6px;font-size:11px">${paradasFmt(s.paradas)}</td></tr>`;
   };
   const aereo = hasAereo(t) ? bar("ITINERÁRIO") + `<table style="width:100%;border-collapse:collapse"><tr><th></th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">VOO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">ORIGEM</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DESTINO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DATA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">SAÍDA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CHEG.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CABINE</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DUR.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">PARADAS</th></tr>${[...idas, ...voltas].map(rowT).join("")}</table>${notes ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${notes}</div>` : ""}${bagChips.length ? '<div style="margin-top:6px">' + bagChips.map(function (c) {
     return '<span style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;background:' + (c[1] ? "#FBECE8" : "#EEF4EF") + ';color:' + (c[1] ? "#B4472E" : GREEN) + ';border:1px solid ' + (c[1] ? "#EAD0C8" : "#D6E4DA") + ';margin:0 6px 4px 0">' + c[0] + '</span>';
@@ -3961,6 +3999,7 @@ function emptyOrc() {
       duracao: "",
       paradas: "",
       cabine: "Econômica",
+      maisDias: 0,
       direcao: "ida"
     }],
     bag: {
@@ -4090,13 +4129,13 @@ function FlightCard({
   }), /*#__PURE__*/React.createElement(OrcMeta, {
     center: true,
     label: "Chegada",
-    value: s.chegada ? /*#__PURE__*/React.createElement("span", null, chegDate(s) + " " + s.chegada, isNextDay(s.saida, s.chegada) && /*#__PURE__*/React.createElement("sup", {
+    value: s.chegada ? /*#__PURE__*/React.createElement("span", null, chegDate(s) + " " + s.chegada, arrExtra(s) > 0 && /*#__PURE__*/React.createElement("sup", {
       style: {
         color: "#9A7B1F",
         fontWeight: 700,
         fontSize: 9
       }
-    }, " +1")) : "—"
+    }, " +", arrExtra(s))) : "—"
   }), /*#__PURE__*/React.createElement(OrcMeta, {
     center: true,
     label: "Dura\xE7\xE3o",
@@ -4405,7 +4444,7 @@ function printOrcamento(t) {
   const metaC = (l, v) => `<div style="text-align:center"><div style="font-size:9px;color:#6B7A70;font-weight:700">${l}</div><div style="font-size:13px;font-weight:700">${v}</div></div>`;
   const fcard = s => {
     const ida = s.direcao === "ida";
-    return `<div style="border:1px solid ${LINE};border-radius:10px;overflow:hidden;margin-bottom:7px"><div style="background:${ida ? "#F1F6F2" : "#FBF6E8"};padding:6px 14px"><b style="font-size:11px;color:${ida ? GREEN : "#9A7B1F"}">${ida ? "→ VOO DE IDA" : "← VOO DE VOLTA"}</b> <span style="font-size:11px;color:#6B7A70">${s.cabine || "Econômica"}</span></div><div style="padding:8px 14px"><div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:2px">${s.origem || "—"} <span style="color:${GOLD}">✈</span> ${s.destino || "—"}</div><div style="display:flex;justify-content:space-around;margin-top:8px;gap:8px">${metaC("Partida", fmtDate(s.data) + (s.saida ? " " + s.saida : ""))}${metaC("Chegada", s.chegada ? chegDate(s) + " " + s.chegada + (isNextDay(s.saida, s.chegada) ? '<sup style="color:#9A7B1F;font-weight:700;font-size:9px">+1</sup>' : "") : "—")}${metaC("Duração", durOf(s))}${metaC("Paradas", paradasFmt(s.paradas))}</div></div></div>`;
+    return `<div style="border:1px solid ${LINE};border-radius:10px;overflow:hidden;margin-bottom:7px"><div style="background:${ida ? "#F1F6F2" : "#FBF6E8"};padding:6px 14px"><b style="font-size:11px;color:${ida ? GREEN : "#9A7B1F"}">${ida ? "→ VOO DE IDA" : "← VOO DE VOLTA"}</b> <span style="font-size:11px;color:#6B7A70">${s.cabine || "Econômica"}</span></div><div style="padding:8px 14px"><div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:2px">${s.origem || "—"} <span style="color:${GOLD}">✈</span> ${s.destino || "—"}</div><div style="display:flex;justify-content:space-around;margin-top:8px;gap:8px">${metaC("Partida", fmtDate(s.data) + (s.saida ? " " + s.saida : ""))}${metaC("Chegada", s.chegada ? chegDate(s) + " " + s.chegada + (arrExtra(s) > 0 ? '<sup style="color:#9A7B1F;font-weight:700;font-size:9px">+' + arrExtra(s) + '</sup>' : "") : "—")}${metaC("Duração", durOf(s))}${metaC("Paradas", paradasFmt(s.paradas))}</div></div></div>`;
   };
   const voos = hasAereo(t) ? [...idas, ...voltas].map(fcard).join("") + (bagChips.length ? `<div style="margin-bottom:6px">${bagChips.map(function (c) {
     return chip(c[0], c[1]);
@@ -5309,7 +5348,36 @@ function Orcamento({
     onChange: e => updT(i, {
       cabine: e.target.value
     })
-  })))), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: "8px 0",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mut"
+  }, "Chegada em:"), /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 13,
+      padding: "4px 8px"
+    },
+    value: t.maisDias || 0,
+    onChange: e => updT(i, {
+      maisDias: +e.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: 0
+  }, "mesmo dia / auto"), /*#__PURE__*/React.createElement("option", {
+    value: 1
+  }, "+1 dia"), /*#__PURE__*/React.createElement("option", {
+    value: 2
+  }, "+2 dias"), /*#__PURE__*/React.createElement("option", {
+    value: 3
+  }, "+3 dias"))))), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     onClick: () => {
       const _i = form.trechos.find(x => x.direcao === "ida") || form.trechos[0] || {};
@@ -5324,6 +5392,7 @@ function Orcamento({
           duracao: "",
           paradas: "",
           cabine: _i.cabine || "Econômica",
+          maisDias: 0,
           direcao: _v ? "volta" : "ida"
         }]
       });
