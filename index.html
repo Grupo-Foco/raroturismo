@@ -810,6 +810,386 @@ async function extractAI(files, mode) {
 }
 
 /* ═══════════════ UI ═══════════════ */
+/* ═══════════════ COTAÇÕES (pedidos de orçamento) ═══════════════ */
+function emptyCot() {
+  return {
+    data: new Date().toISOString().slice(0, 10),
+    nome: "",
+    pax: "",
+    tipo: "pacote",
+    origem: "",
+    destino: "",
+    periodoIni: "",
+    periodoFim: "",
+    detalhes: ""
+  };
+}
+const cotRow = c => ({
+  data: c.data || null,
+  nome: c.nome || null,
+  pax: c.pax || null,
+  tipo: c.tipo || null,
+  origem: c.origem || null,
+  destino: c.destino || null,
+  periodo_ini: c.periodoIni || null,
+  periodo_fim: c.periodoFim || null,
+  detalhes: c.detalhes || null
+});
+const cotFrom = r => ({
+  id: r.id,
+  createdAt: r.created_at,
+  data: r.data || "",
+  nome: r.nome || "",
+  pax: r.pax || "",
+  tipo: r.tipo || "pacote",
+  origem: r.origem || "",
+  destino: r.destino || "",
+  periodoIni: r.periodo_ini || "",
+  periodoFim: r.periodo_fim || "",
+  detalhes: r.detalhes || ""
+});
+async function listCotacoes() {
+  if (!sb) return [];
+  const {
+    data,
+    error
+  } = await sb.from("cotacoes").select("*").order("created_at", {
+    ascending: false
+  });
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return (data || []).map(cotFrom);
+}
+async function saveCotacao(c) {
+  if (!sb) return c;
+  const {
+    data,
+    error
+  } = await sb.from("cotacoes").insert(cotRow(c)).select().single();
+  if (error) {
+    console.error(error);
+    return c;
+  }
+  return cotFrom(data);
+}
+async function updateCotacaoFull(id, c) {
+  if (!sb || typeof id === "number") return;
+  const {
+    error
+  } = await sb.from("cotacoes").update(cotRow(c)).eq("id", id);
+  if (error) console.error(error);
+}
+async function deleteCotacao(id) {
+  if (!sb || typeof id === "number") return;
+  const {
+    error
+  } = await sb.from("cotacoes").delete().eq("id", id);
+  if (error) console.error(error);
+}
+function Cotacoes({
+  cotacoes,
+  onSave,
+  onUpdate,
+  onDelete,
+  onGerarOrc
+}) {
+  const [form, setForm] = useState(emptyCot());
+  const [editId, setEditId] = useState(null);
+  const [fNome, setFNome] = useState("");
+  const [fTipo, setFTipo] = useState("todos");
+  const set = p => setForm(f => ({
+    ...f,
+    ...p
+  }));
+  const salvar = () => {
+    if (!(form.nome || "").trim() && !(form.destino || "").trim()) {
+      window.alert("Preencha ao menos o cliente ou o destino.");
+      return;
+    }
+    if (form.periodoIni && form.periodoFim && parseDate(form.periodoFim) < parseDate(form.periodoIni)) {
+      window.alert("O fim do período está antes do início.");
+      return;
+    }
+    if (editId) {
+      onUpdate(editId, form);
+    } else {
+      onSave({
+        ...form,
+        id: Date.now(),
+        createdAt: new Date().toISOString()
+      });
+    }
+    setForm(emptyCot());
+    setEditId(null);
+  };
+  const editar = c => {
+    setForm({
+      ...emptyCot(),
+      ...c
+    });
+    setEditId(c.id || null);
+    window.scrollTo(0, 0);
+  };
+  const TL = {
+    aereo: "Aéreo",
+    hotel: "Hotel",
+    pacote: "Pacote",
+    servicos: "Serviços"
+  };
+  const filtered = cotacoes.filter(c => (fNome === "" || (c.nome || "").toLowerCase().indexOf(fNome.toLowerCase()) > -1) && (fTipo === "todos" || c.tipo === fTipo));
+  const periodo = c => c.periodoIni || c.periodoFim ? fmtDate(c.periodoIni) + " a " + fmtDate(c.periodoFim) : "";
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "st",
+    style: {
+      marginBottom: 10
+    }
+  }, editId ? "✏️ Editar cotação" : "🗒️ Nova cotação", " ", /*#__PURE__*/React.createElement("span", {
+    className: "mut",
+    style: {
+      fontSize: 12,
+      fontWeight: 400
+    }
+  }, "pedido de or\xE7amento")), /*#__PURE__*/React.createElement("div", {
+    className: "g2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Data do pedido"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "date",
+    value: form.data,
+    onChange: e => set({
+      data: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Cliente"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: form.nome,
+    placeholder: "Nome",
+    onChange: e => set({
+      nome: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "g2",
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "N\xBA de passageiros"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: form.pax,
+    placeholder: "Ex.: 3 (2 adultos + 1 crian\xE7a 13a)",
+    onChange: e => set({
+      pax: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Tipo"
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    value: form.tipo,
+    onChange: e => set({
+      tipo: e.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "aereo"
+  }, "A\xE9reo"), /*#__PURE__*/React.createElement("option", {
+    value: "hotel"
+  }, "Hotel"), /*#__PURE__*/React.createElement("option", {
+    value: "pacote"
+  }, "Pacote"), /*#__PURE__*/React.createElement("option", {
+    value: "servicos"
+  }, "Servi\xE7os")))), /*#__PURE__*/React.createElement("div", {
+    className: "g2",
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Origem"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: form.origem,
+    placeholder: "GYN",
+    onChange: e => set({
+      origem: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Destino"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: form.destino,
+    placeholder: "Porto de Galinhas",
+    onChange: e => set({
+      destino: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "g2",
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Per\xEDodo (in\xEDcio)"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "date",
+    value: form.periodoIni,
+    onChange: e => set({
+      periodoIni: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Per\xEDodo (fim)"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "date",
+    min: form.periodoIni || undefined,
+    value: form.periodoFim,
+    onChange: e => set({
+      periodoFim: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Detalhes"
+  }, /*#__PURE__*/React.createElement("textarea", {
+    className: "in",
+    value: form.detalhes,
+    placeholder: "Ex.: ida tarde/noite, volta qualquer hor\xE1rio",
+    onChange: e => set({
+      detalhes: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      gap: 8,
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: salvar
+  }, editId ? "✓ Atualizar cotação" : "＋ Adicionar cotação"), editId && /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: () => {
+      setForm(emptyCot());
+      setEditId(null);
+    }
+  }, "Cancelar"))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "st"
+  }, "Cota\xE7\xF5es ", /*#__PURE__*/React.createElement("span", {
+    className: "mut",
+    style: {
+      fontSize: 12,
+      fontWeight: 400
+    }
+  }, "\xB7 ", filtered.length, " de ", cotacoes.length)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 13
+    },
+    placeholder: "\uD83D\uDD0E Buscar por nome",
+    value: fNome,
+    onChange: e => setFNome(e.target.value)
+  }), /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 13
+    },
+    value: fTipo,
+    onChange: e => setFTipo(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "todos"
+  }, "Todos os tipos"), /*#__PURE__*/React.createElement("option", {
+    value: "aereo"
+  }, "A\xE9reo"), /*#__PURE__*/React.createElement("option", {
+    value: "hotel"
+  }, "Hotel"), /*#__PURE__*/React.createElement("option", {
+    value: "pacote"
+  }, "Pacote"), /*#__PURE__*/React.createElement("option", {
+    value: "servicos"
+  }, "Servi\xE7os")))), filtered.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 13
+    }
+  }, "Nenhuma cota\xE7\xE3o. Adicione uma acima."), filtered.map(c => /*#__PURE__*/React.createElement("div", {
+    key: c.id,
+    style: {
+      padding: "10px 0",
+      borderTop: `1px solid ${LINE}`,
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 200,
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700
+    }
+  }, c.nome || "(sem nome)", " ", /*#__PURE__*/React.createElement("span", {
+    className: "mut",
+    style: {
+      fontWeight: 400,
+      fontSize: 12
+    }
+  }, "\xB7 ", fmtDate(c.data))), /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 12
+    }
+  }, [TL[c.tipo] || c.tipo, c.pax, c.origem || c.destino ? (c.origem || "?") + " → " + (c.destino || "?") : "", periodo(c)].filter(Boolean).join(" · ")), c.detalhes && /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 12,
+      fontStyle: "italic"
+    }
+  }, c.detalhes)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: () => onGerarOrc(c)
+  }, "\uD83E\uDDFE Gerar or\xE7amento"), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: () => editar(c)
+  }, "\u270F\uFE0F Editar"), /*#__PURE__*/React.createElement("button", {
+    className: "icn",
+    onClick: () => {
+      if (window.confirm("Excluir esta cotação?")) onDelete(c.id);
+    }
+  }, "\uD83D\uDDD1\uFE0F"))))));
+}
 function App() {
   const [tab, setTab] = useState("emissao");
   const [trips, setTrips] = useState([]);
@@ -870,6 +1250,68 @@ function App() {
     updateOrcamentoFull(id, o).catch(() => {});
   };
   const [orcLoad, setOrcLoad] = useState(null);
+  const [cotacoes, setCotacoes] = useState([]);
+  useEffect(() => {
+    listCotacoes().then(r => {
+      if (r && r.length) setCotacoes(r);
+    }).catch(() => {});
+  }, []);
+  const handleSaveCot = async c => {
+    setCotacoes(p => [c, ...p]);
+    try {
+      const r = await saveCotacao(c);
+      if (r && r.id !== c.id) setCotacoes(p => p.map(x => x.id === c.id ? r : x));
+    } catch (e) {}
+  };
+  const handleUpdateCot = (id, c) => {
+    setCotacoes(p => p.map(x => x.id === id ? {
+      ...c,
+      id,
+      createdAt: x.createdAt
+    } : x));
+    updateCotacaoFull(id, c).catch(() => {});
+  };
+  const handleDeleteCot = id => {
+    setCotacoes(p => p.filter(x => x.id !== id));
+    deleteCotacao(id).catch(() => {});
+  };
+  const gerarOrcDeCot = c => {
+    const isA = c.tipo === "aereo" || c.tipo === "pacote";
+    const isH = c.tipo === "hotel" || c.tipo === "pacote";
+    const trechos = isA && (c.origem || c.destino) ? [{
+      origem: c.origem || "",
+      destino: c.destino || "",
+      data: c.periodoIni || "",
+      saida: "",
+      chegada: "",
+      duracao: "",
+      paradas: "",
+      cabine: "Econômica",
+      direcao: "ida"
+    }, {
+      origem: c.destino || "",
+      destino: c.origem || "",
+      data: c.periodoFim || "",
+      saida: "",
+      chegada: "",
+      duracao: "",
+      paradas: "",
+      cabine: "Econômica",
+      direcao: "volta"
+    }] : [];
+    setOrcLoad({
+      destino: c.destino || "",
+      cliente: c.nome || "",
+      passageiros: c.pax || "",
+      tipo: c.tipo || "pacote",
+      trechos,
+      checkin: isH ? c.periodoIni || "" : "",
+      checkout: isH ? c.periodoFim || "" : "",
+      observacoes: c.detalhes || "",
+      _ld: Date.now()
+    });
+    setTab("orcamento");
+  };
   const _t0 = new Date();
   _t0.setHours(0, 0, 0, 0);
   const agendaAlerts = trips.filter(t => {
@@ -878,7 +1320,7 @@ function App() {
     const dias = Math.round((addDays(vd, -3) - _t0) / 86400000);
     return dias <= 0 && _t0 <= vd;
   }).length;
-  const tabs = [["emissao", "🎫 Emissão"], ["orcamento", "🧾 Orçamento"], ["salvos", "🗂️ Salvos"], ["viagens", "📄 Viagens"], ["agenda", "📅 Agenda"], ["relatorios", "📊 Relatórios"]];
+  const tabs = [["emissao", "🎫 Emissão"], ["cotacoes", "🗒️ Cotações"], ["orcamento", "🧾 Orçamento"], ["salvos", "🗂️ Salvos"], ["viagens", "📄 Viagens"], ["agenda", "📅 Agenda"], ["relatorios", "📊 Relatórios"]];
   const show = id => ({
     display: tab === id ? "block" : "none"
   });
@@ -957,6 +1399,14 @@ function App() {
     onSaveOrc: handleSaveOrc,
     onUpdateFull: handleUpdateOrcFull,
     loadReq: orcLoad
+  })), /*#__PURE__*/React.createElement("div", {
+    style: show("cotacoes")
+  }, /*#__PURE__*/React.createElement(Cotacoes, {
+    cotacoes: cotacoes,
+    onSave: handleSaveCot,
+    onUpdate: handleUpdateCot,
+    onDelete: handleDeleteCot,
+    onGerarOrc: gerarOrcDeCot
   })), /*#__PURE__*/React.createElement("div", {
     style: show("salvos")
   }, /*#__PURE__*/React.createElement(SavedTab, {
@@ -4129,13 +4579,14 @@ function SavedOrcs({
 }) {
   const [fStatus, setFStatus] = useState("todos");
   const [fMes, setFMes] = useState("todos");
+  const [fNome, setFNome] = useState("");
   const dot = st => ({
     pendente: MUTED,
     vendido: GREEN,
     recusado: "#B4472E"
   })[st || "pendente"];
   const meses = [...new Set(orcamentos.map(o => monthKey(o.createdAt)))].filter(m => m && m !== "—").sort().reverse();
-  const filtered = orcamentos.filter(o => (fStatus === "todos" || (o.status || "pendente") === fStatus) && (fMes === "todos" || monthKey(o.createdAt) === fMes));
+  const filtered = orcamentos.filter(o => (fStatus === "todos" || (o.status || "pendente") === fStatus) && (fMes === "todos" || monthKey(o.createdAt) === fMes) && (fNome === "" || (o.cliente || "").toLowerCase().indexOf(fNome.toLowerCase()) > -1 || (o.destino || "").toLowerCase().indexOf(fNome.toLowerCase()) > -1));
   return /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
@@ -4163,7 +4614,16 @@ function SavedOrcs({
       gap: 8,
       flexWrap: "wrap"
     }
-  }, /*#__PURE__*/React.createElement("select", {
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 13
+    },
+    placeholder: "\uD83D\uDD0E Nome/destino",
+    value: fNome,
+    onChange: e => setFNome(e.target.value)
+  }), /*#__PURE__*/React.createElement("select", {
     value: fStatus,
     onChange: e => setFStatus(e.target.value),
     className: "in",
