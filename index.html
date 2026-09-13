@@ -542,6 +542,38 @@ const chipsOf = bag => {
   c.push([b.despachada > 0 ? b.despachada + " bagagem despachada" : "sem bagagem despachada", !(b.despachada > 0)]);
   return c;
 };
+function bagRows(idas, voltas, labIda, labVolta) {
+  var rows = [];
+  var key = function (b) {
+    b = b || {};
+    return (b.itemPessoal ? 1 : 0) + "|" + (+b.mao || 0) + "|" + (+b.despachada || 0);
+  };
+  var proc = function (legs, lab) {
+    if (!legs || !legs.length) return;
+    var ks = legs.map(function (l) {
+      return key(l.bag);
+    });
+    var same = ks.every(function (k) {
+      return k === ks[0];
+    });
+    if (same) {
+      rows.push({
+        label: lab,
+        bag: legs[0].bag
+      });
+    } else {
+      legs.forEach(function (l) {
+        rows.push({
+          label: lab + " " + (l.origem || "") + "→" + (l.destino || ""),
+          bag: l.bag
+        });
+      });
+    }
+  };
+  proc(idas, labIda);
+  proc(voltas, labVolta);
+  return rows;
+}
 function BagControls({
   bag,
   onChange
@@ -3167,7 +3199,7 @@ function Voucher({
   }, "Viagens Raras a Pre\xE7os Raros")), /*#__PURE__*/React.createElement("img", {
     src: LOGO,
     style: {
-      height: 46
+      height: 72
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3310,7 +3342,7 @@ function Voucher({
       marginTop: 8,
       lineHeight: 1.5
     }
-  }, "\xBB ", notes), [...idas, ...voltas].map((s, li) => /*#__PURE__*/React.createElement("div", {
+  }, "\xBB ", notes), bagRows(idas, voltas, "IDA", "VOLTA").map((r, li) => /*#__PURE__*/React.createElement("div", {
     key: li,
     style: {
       marginTop: 6,
@@ -3325,7 +3357,7 @@ function Voucher({
       color: GREEN,
       fontSize: 9
     }
-  }, (s.direcao === "volta" ? "VOLTA" : "IDA") + " " + (s.origem || "") + "→" + (s.destino || ""), ":"), chipsOf(s.bag).map((c, j) => /*#__PURE__*/React.createElement(Chip, {
+  }, r.label, ":"), chipsOf(r.bag).map((c, j) => /*#__PURE__*/React.createElement(Chip, {
     key: j,
     txt: c[0],
     red: c[1]
@@ -3527,10 +3559,10 @@ function Viagens({
   }, filtered.length, " viagem(ns)")), filtered.map(t => {
     const lucro = num(t.receita) - num(t.custo);
     const ic = t.tipo === "hotel" ? "🏨" : t.tipo === "pacote" ? "📦" : "✈️";
-    const _volta = (t.trechos || []).find(x => x.direcao === "volta");
-    const _last = (t.trechos || [])[(t.trechos || []).length - 1] || {};
-    const _orig = t.trechos && t.trechos[0] && t.trechos[0].origem || "?";
-    const _dest = _volta && _volta.destino || _last.destino || "?";
+    const _idas = (t.trechos || []).filter(x => x.direcao !== "volta");
+    const _base = _idas.length ? _idas : t.trechos || [];
+    const _orig = _base[0] && _base[0].origem || "?";
+    const _dest = _base[_base.length - 1] && _base[_base.length - 1].destino || "?";
     const titulo = t.tipo === "hotel" ? t.hotelNome || "Hotel" : _orig + " → " + _dest + (t.tipo === "pacote" && t.hotelNome ? " + " + t.hotelNome : "");
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
@@ -4093,9 +4125,9 @@ function printVoucher(t) {
     const ida = s.direcao === "ida";
     return `<tr style="background:${ida ? "#F1F6F2" : "#FBF6E8"}"><td style="padding:6px;border-left:3px solid ${ida ? GREEN : GOLD};font-weight:700;color:${ida ? GREEN : "#9A7B1F"};font-size:11px">${ida ? "IDA" : "VOLTA"}</td><td style="padding:6px;font-weight:700;font-size:11px">${normVoo(s.voo) || "—"}</td><td style="padding:6px;font-size:11px">${s.origem || "—"}</td><td style="padding:6px;font-size:11px">${s.destino || "—"}</td><td style="padding:6px;font-size:11px">${fmtDate(s.data)}</td><td style="padding:6px;font-size:11px">${s.saida || "—"}</td><td style="padding:6px;font-size:11px">${s.chegada || "—"}${arrExtra(s) > 0 ? '<sup style="color:#9A7B1F;font-weight:700;font-size:8px">+' + arrExtra(s) + '</sup>' : ""}</td><td style="padding:6px;font-size:11px">${s.cabine || "—"}</td><td style="padding:6px;font-size:11px">${durOf(s)}</td><td style="padding:6px;font-size:11px">${paradasFmt(s.paradas)}</td></tr>`;
   };
-  const aereo = hasAereo(t) ? bar("ITINERÁRIO") + `<table style="width:100%;border-collapse:collapse"><tr><th></th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">VOO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">ORIGEM</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DESTINO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DATA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">SAÍDA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CHEG.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CABINE</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DUR.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">PARADAS</th></tr>${[...idas, ...voltas].map(rowT).join("")}</table>${notes ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${notes}</div>` : ""}${[...idas, ...voltas].map(function (s) {
-    var ch = chipsOf(s.bag);
-    return '<div style="margin-top:6px;font-size:10px"><b style="color:' + GREEN + '">' + ((s.direcao === "volta" ? "VOLTA " : "IDA ") + (s.origem || "") + "→" + (s.destino || "")) + ':</b> ' + ch.map(function (c) {
+  const aereo = hasAereo(t) ? bar("ITINERÁRIO") + `<table style="width:100%;border-collapse:collapse"><tr><th></th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">VOO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">ORIGEM</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DESTINO</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DATA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">SAÍDA</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CHEG.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">CABINE</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">DUR.</th><th style="text-align:left;font-size:9px;color:#6B7A70;padding:4px 6px">PARADAS</th></tr>${[...idas, ...voltas].map(rowT).join("")}</table>${notes ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${notes}</div>` : ""}${bagRows(idas, voltas, "IDA", "VOLTA").map(function (r) {
+    var ch = chipsOf(r.bag);
+    return '<div style="margin-top:6px;font-size:10px"><b style="color:' + GREEN + '">' + r.label + ':</b> ' + ch.map(function (c) {
       return '<span style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;background:' + (c[1] ? "#FBECE8" : "#EEF4EF") + ';color:' + (c[1] ? "#B4472E" : GREEN) + ';border:1px solid ' + (c[1] ? "#EAD0C8" : "#D6E4DA") + ';margin:0 6px 4px 0">' + c[0] + '</span>';
     }).join("") + '</div>';
   }).join("")}` : "";
@@ -4103,7 +4135,7 @@ function printVoucher(t) {
   const paxRows = pax.map((p, i) => `<div style="display:flex;gap:12px;padding:5px 6px;background:${i % 2 ? "#FAFAF6" : "#fff"};font-size:12px"><span style="color:#6B7A70;font-weight:700;min-width:44px">Pax ${i + 1}</span><span style="font-weight:600">${p}</span></div>`).join("");
   const imp = hasAereo(t) ? `<div style="margin-top:12px;background:${CREAM};border-left:3px solid ${GOLD};padding:8px 10px;border-radius:4px;font-size:10.5px;color:#5A4A1E"><b>IMPORTANTE:</b> ${IMPORTANTE_AÉREO}</div>` : "";
   const metaRow = `<div style="display:flex;gap:16px;flex-wrap:wrap">${hasAereo(t) ? `${t.localizador ? `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">LOCALIZADOR</div><div style="font-weight:700">${t.localizador}</div></div>` : ""}${t.companhia ? `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">COMPANHIA</div><div style="font-weight:700">${t.companhia}</div></div>` : ""}` : `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">HOTEL</div><div style="font-weight:700">${t.hotelNome || "—"}</div></div>`}<div><div style="font-size:9px;color:#6B7A70;font-weight:700">EMISSÃO</div><div style="font-weight:700">${today()}</div></div></div>`;
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Voucher RaRo</title><style>*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}@page{margin:8mm}</style></head><body style="margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:${INK};background:#fff"><div style="max-width:660px;margin:24px auto;position:relative;border:1px solid ${LINE};border-radius:10px;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:${GOLD}"></div><div style="position:absolute;right:0;top:0;bottom:0;width:6px;background:${GOLD}"></div><div style="background:${GREEN};padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${GOLD}"><div style="line-height:1.2"><div style="color:#fff;font-size:15px;font-weight:700">RaRo Turismo</div><div style="color:${GOLD_SOFT};font-size:9px;font-style:italic">Viagens Raras a Preços Raros</div></div><img src="${LOGO}" style="height:46px"/><div style="text-align:right"><div style="color:${GOLD};font-size:17px;font-weight:800;letter-spacing:1px">${meta.badge}</div>${right ? `<div style="color:${GREEN};background:${GOLD};font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block">${right}</div>` : ""}</div></div><div style="padding:16px 22px"><div style="font-size:17px;font-weight:800;color:${GREEN}">${meta.title}</div><div style="font-size:11px;color:#6B7A70">${meta.sub}</div><div style="height:2px;background:${GOLD};opacity:.5;margin:10px 0"></div>${metaRow}${aereo}${hotel}${extrasHTML(t.extras)}${bar(paxLabel(t) + (pax.length ? " — " + pax.length + " " + (pax.length === 1 ? paxTerm(t) : paxTerm(t) + "s") : ""))}${paxRows}${imp}<div style="margin-top:14px;padding-top:8px;border-top:1px solid ${LINE};text-align:center"><div style="font-size:10px;color:${GREEN};font-weight:600">${FOOTER_L}</div><div style="font-size:9px;color:#6B7A70;font-style:italic">${FOOTER_R}</div></div></div></div><script>window.onload=function(){var i=document.images,n=i.length,d=0;function go(){if(++d>=n)setTimeout(function(){window.print()},80);}if(!n){window.print();}else{for(var k=0;k<n;k++){if(i[k].complete)go();else{i[k].onload=go;i[k].onerror=go;}}}}<\/script></body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Voucher RaRo</title><style>*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}@page{margin:8mm}</style></head><body style="margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:${INK};background:#fff"><div style="max-width:660px;margin:24px auto;position:relative;border:1px solid ${LINE};border-radius:10px;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:${GOLD}"></div><div style="position:absolute;right:0;top:0;bottom:0;width:6px;background:${GOLD}"></div><div style="background:${GREEN};padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${GOLD}"><div style="line-height:1.2"><div style="color:#fff;font-size:15px;font-weight:700">RaRo Turismo</div><div style="color:${GOLD_SOFT};font-size:9px;font-style:italic">Viagens Raras a Preços Raros</div></div><img src="${LOGO}" style="height:72px"/><div style="text-align:right"><div style="color:${GOLD};font-size:17px;font-weight:800;letter-spacing:1px">${meta.badge}</div>${right ? `<div style="color:${GREEN};background:${GOLD};font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block">${right}</div>` : ""}</div></div><div style="padding:16px 22px"><div style="font-size:17px;font-weight:800;color:${GREEN}">${meta.title}</div><div style="font-size:11px;color:#6B7A70">${meta.sub}</div><div style="height:2px;background:${GOLD};opacity:.5;margin:10px 0"></div>${metaRow}${aereo}${hotel}${extrasHTML(t.extras)}${bar(paxLabel(t) + (pax.length ? " — " + pax.length + " " + (pax.length === 1 ? paxTerm(t) : paxTerm(t) + "s") : ""))}${paxRows}${imp}<div style="margin-top:14px;padding-top:8px;border-top:1px solid ${LINE};text-align:center"><div style="font-size:10px;color:${GREEN};font-weight:600">${FOOTER_L}</div><div style="font-size:9px;color:#6B7A70;font-style:italic">${FOOTER_R}</div></div></div></div><script>window.onload=function(){var i=document.images,n=i.length,d=0;function go(){if(++d>=n)setTimeout(function(){window.print()},80);}if(!n){window.print();}else{for(var k=0;k<n;k++){if(i[k].complete)go();else{i[k].onload=go;i[k].onerror=go;}}}}<\/script></body></html>`;
   const w = window.open("", "_blank");
   if (w) {
     w.document.write(html);
@@ -4404,7 +4436,7 @@ function OrcamentoDoc({
   }, /*#__PURE__*/React.createElement("img", {
     src: LOGO,
     style: {
-      height: 52
+      height: 72
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4500,7 +4532,7 @@ function OrcamentoDoc({
   })), hasAereo(t) && /*#__PURE__*/React.createElement("div", null, [...idas, ...voltas].map((s, i) => /*#__PURE__*/React.createElement(FlightCard, {
     key: i,
     s: s
-  })), [...idas, ...voltas].map((s, li) => /*#__PURE__*/React.createElement("div", {
+  })), bagRows(idas, voltas, "Ida", "Volta").map((r, li) => /*#__PURE__*/React.createElement("div", {
     key: li,
     style: {
       marginBottom: 6,
@@ -4514,7 +4546,7 @@ function OrcamentoDoc({
     style: {
       color: GREEN
     }
-  }, s.direcao === "volta" ? "Volta" : "Ida", ":"), chipsOf(s.bag).map((c, j) => /*#__PURE__*/React.createElement(Chip, {
+  }, r.label, ":"), chipsOf(r.bag).map((c, j) => /*#__PURE__*/React.createElement(Chip, {
     key: j,
     txt: c[0],
     red: c[1]
@@ -4684,16 +4716,16 @@ function printOrcamento(t) {
     const ida = s.direcao === "ida";
     return `<div style="border:1px solid ${LINE};border-radius:10px;overflow:hidden;margin-bottom:7px"><div style="background:${ida ? "#F1F6F2" : "#FBF6E8"};padding:6px 14px"><b style="font-size:11px;color:${ida ? GREEN : "#9A7B1F"}">${ida ? "→ VOO DE IDA" : "← VOO DE VOLTA"}</b> <span style="font-size:11px;color:#6B7A70">${s.cabine || "Econômica"}</span></div><div style="padding:8px 14px"><div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:2px">${s.origem || "—"} <span style="color:${GOLD}">✈</span> ${s.destino || "—"}</div><div style="display:flex;justify-content:space-around;margin-top:8px;gap:8px">${metaC("Partida", fmtDate(s.data) + (s.saida ? " " + s.saida : ""))}${metaC("Chegada", s.chegada ? chegDate(s) + " " + s.chegada + (arrExtra(s) > 0 ? '<sup style="color:#9A7B1F;font-weight:700;font-size:9px">+' + arrExtra(s) + '</sup>' : "") : "—")}${metaC("Duração", durOf(s))}${metaC("Paradas", paradasFmt(s.paradas))}</div></div></div>`;
   };
-  const voos = hasAereo(t) ? [...idas, ...voltas].map(fcard).join("") + [...idas, ...voltas].map(function (s) {
-    var ch = chipsOf(s.bag);
-    return '<div style="margin-bottom:6px;font-size:11px"><b style="color:' + GREEN + '">' + (s.direcao === "volta" ? "Volta" : "Ida") + ':</b> ' + ch.map(function (c) {
+  const voos = hasAereo(t) ? [...idas, ...voltas].map(fcard).join("") + bagRows(idas, voltas, "Ida", "Volta").map(function (r) {
+    var ch = chipsOf(r.bag);
+    return '<div style="margin-bottom:6px;font-size:11px"><b style="color:' + GREEN + '">' + r.label + ':</b> ' + ch.map(function (c) {
       return chip(c[0], c[1]);
     }).join("") + '</div>';
   }).join("") : "";
   const hotel = hasHotel(t) ? `<div style="border:1px solid ${LINE};border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-weight:800;font-size:11px;color:${GREEN};margin-bottom:4px">HOSPEDAGEM</div><div style="font-weight:700">${t.hotelNome || "—"}</div><div style="font-size:11px;color:#6B7A70">${t.hotelEndereco || ""}</div><div style="display:flex;gap:14px;margin-top:8px">${meta("Check-in", fmtDate(t.checkin))}${meta("Check-out", fmtDate(t.checkout))}${n > 0 ? meta("Noites", String(n)) : ""}</div>${t.apartamentos.filter(a => a.trim()).length ? `<div style="margin-top:6px;font-size:12px">${t.apartamentos.filter(a => a.trim()).map(a => `<div>• ${a}</div>`).join("")}</div>` : ""}${t.fotosHotel.length ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${t.fotosHotel.map(f => `<img src="${f}" style="width:84px;height:58px;object-fit:cover;border-radius:6px"/>`).join("")}</div>` : ""}</div>` : "";
   const heroImg = t.fotosDestino[0] ? `<img src="${t.fotosDestino[0]}" style="width:100%;height:120px;object-fit:cover;display:block"/>` : "";
   const galeria = t.fotosDestino.length > 1 ? `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">${t.fotosDestino.slice(1).map(f => `<img src="${f}" style="width:90px;height:62px;object-fit:cover;border-radius:6px"/>`).join("")}</div>` : "";
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Orcamento RaRo</title><style>*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}@page{margin:8mm}</style></head><body style="margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:${INK};background:#fff"><div style="max-width:680px;margin:8px auto;border:1px solid ${LINE};border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid ${LINE}"><img src="${LOGO}" style="height:44px"/><div style="text-align:center"><div style="color:${GREEN};font-size:16px;font-weight:800">PROPOSTA DE VIAGEM</div><div style="display:inline-block;background:${GREEN};color:${GOLD_SOFT};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:3px">COTAÇÃO ${(t.destino || "").toUpperCase()}</div></div><div style="text-align:right;font-size:9.5px;color:#6B7A70;line-height:1.5"><div style="color:${GREEN};font-weight:700;font-size:12px">Raro Turismo</div><div>${RARO_CONTATO.cnpj}</div><div>${RARO_CONTATO.tel}</div><div>${RARO_CONTATO.email}</div><div>@${RARO_CONTATO.insta}</div></div></div><div style="height:3px;background:${GOLD}"></div><div style="padding:10px 16px"><div style="border-radius:10px;overflow:hidden;margin-bottom:12px;border:1px solid ${LINE}">${heroImg}<div style="background:${GREEN};padding:8px 14px"><div style="font-size:9px;letter-spacing:2px;color:${GOLD_SOFT}">SEU DESTINO</div><div style="font-size:20px;font-weight:800;color:#fff">${t.destino || "—"}</div></div></div><div style="display:flex;gap:20px;margin-bottom:8px">${t.cliente ? meta("CLIENTE", t.cliente) : ""}${t.passageiros ? meta(paxLabel(t), t.passageiros) : ""}${hasAereo(t) && t.companhia ? meta("COMPANHIA", t.companhia) : ""}</div>${voos}${hotel}${galeria}${extrasHTML(t.extras)}<div style="background:${GREEN};border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-size:10px;color:${GOLD_SOFT};letter-spacing:1px">INVESTIMENTO TOTAL</div><div style="font-size:22px;font-weight:800;color:${GOLD}">${precoFmt(t.preco)}</div></div><div style="text-align:right;font-size:12px;color:#fff;max-width:55%"><div style="font-size:10px;color:${GOLD_SOFT};letter-spacing:1px">FORMA DE PAGAMENTO</div><div>${t.pagamento || "A combinar"}</div></div></div>${t.observacoes ? `<div style="margin-top:12px"><div style="font-weight:800;font-size:11px;color:${GREEN}">OUTRAS INFORMAÇÕES</div><div style="font-size:12px">${t.observacoes}</div></div>` : ""}<div style="margin-top:14px;padding-top:8px;border-top:1px solid ${LINE};text-align:center"><div style="font-size:9px;color:#6B7A70;font-style:italic">${t.validade || ""}</div><div style="font-size:10px;color:${GREEN};font-weight:600;margin-top:2px">${FOOTER_L}</div></div></div></div><script>window.onload=function(){var i=document.images,n=i.length,d=0;function go(){if(++d>=n)setTimeout(function(){window.print()},80);}if(!n){window.print();}else{for(var k=0;k<n;k++){if(i[k].complete)go();else{i[k].onload=go;i[k].onerror=go;}}}}<\/script></body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Orcamento RaRo</title><style>*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}@page{margin:8mm}</style></head><body style="margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:${INK};background:#fff"><div style="max-width:680px;margin:8px auto;border:1px solid ${LINE};border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid ${LINE}"><img src="${LOGO}" style="height:72px"/><div style="text-align:center"><div style="color:${GREEN};font-size:16px;font-weight:800">PROPOSTA DE VIAGEM</div><div style="display:inline-block;background:${GREEN};color:${GOLD_SOFT};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:3px">COTAÇÃO ${(t.destino || "").toUpperCase()}</div></div><div style="text-align:right;font-size:9.5px;color:#6B7A70;line-height:1.5"><div style="color:${GREEN};font-weight:700;font-size:12px">Raro Turismo</div><div>${RARO_CONTATO.cnpj}</div><div>${RARO_CONTATO.tel}</div><div>${RARO_CONTATO.email}</div><div>@${RARO_CONTATO.insta}</div></div></div><div style="height:3px;background:${GOLD}"></div><div style="padding:10px 16px"><div style="border-radius:10px;overflow:hidden;margin-bottom:12px;border:1px solid ${LINE}">${heroImg}<div style="background:${GREEN};padding:8px 14px"><div style="font-size:9px;letter-spacing:2px;color:${GOLD_SOFT}">SEU DESTINO</div><div style="font-size:20px;font-weight:800;color:#fff">${t.destino || "—"}</div></div></div><div style="display:flex;gap:20px;margin-bottom:8px">${t.cliente ? meta("CLIENTE", t.cliente) : ""}${t.passageiros ? meta(paxLabel(t), t.passageiros) : ""}${hasAereo(t) && t.companhia ? meta("COMPANHIA", t.companhia) : ""}</div>${voos}${hotel}${galeria}${extrasHTML(t.extras)}<div style="background:${GREEN};border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-size:10px;color:${GOLD_SOFT};letter-spacing:1px">INVESTIMENTO TOTAL</div><div style="font-size:22px;font-weight:800;color:${GOLD}">${precoFmt(t.preco)}</div></div><div style="text-align:right;font-size:12px;color:#fff;max-width:55%"><div style="font-size:10px;color:${GOLD_SOFT};letter-spacing:1px">FORMA DE PAGAMENTO</div><div>${t.pagamento || "A combinar"}</div></div></div>${t.observacoes ? `<div style="margin-top:12px"><div style="font-weight:800;font-size:11px;color:${GREEN}">OUTRAS INFORMAÇÕES</div><div style="font-size:12px">${t.observacoes}</div></div>` : ""}<div style="margin-top:14px;padding-top:8px;border-top:1px solid ${LINE};text-align:center"><div style="font-size:9px;color:#6B7A70;font-style:italic">${t.validade || ""}</div><div style="font-size:10px;color:${GREEN};font-weight:600;margin-top:2px">${FOOTER_L}</div></div></div></div><script>window.onload=function(){var i=document.images,n=i.length,d=0;function go(){if(++d>=n)setTimeout(function(){window.print()},80);}if(!n){window.print();}else{for(var k=0;k<n;k++){if(i[k].complete)go();else{i[k].onload=go;i[k].onerror=go;}}}}<\/script></body></html>`;
   const w = window.open("", "_blank");
   if (w) {
     w.document.write(html);
