@@ -938,7 +938,8 @@ function emptyCot() {
     destino: "",
     periodoIni: "",
     periodoFim: "",
-    detalhes: ""
+    detalhes: "",
+    status: "pendente"
   };
 }
 const cotRow = c => ({
@@ -950,7 +951,8 @@ const cotRow = c => ({
   destino: c.destino || null,
   periodo_ini: c.periodoIni || null,
   periodo_fim: c.periodoFim || null,
-  detalhes: c.detalhes || null
+  detalhes: c.detalhes || null,
+  status: c.status || "pendente"
 });
 const cotFrom = r => ({
   id: r.id,
@@ -963,7 +965,8 @@ const cotFrom = r => ({
   destino: r.destino || "",
   periodoIni: r.periodo_ini || "",
   periodoFim: r.periodo_fim || "",
-  detalhes: r.detalhes || ""
+  detalhes: r.detalhes || "",
+  status: r.status || "pendente"
 });
 async function listCotacoes() {
   if (!sb) return [];
@@ -1016,6 +1019,7 @@ function Cotacoes({
   const [editId, setEditId] = useState(null);
   const [fNome, setFNome] = useState("");
   const [fTipo, setFTipo] = useState("todos");
+  const [fStatus, setFStatus] = useState("todos");
   const set = p => setForm(f => ({
     ...f,
     ...p
@@ -1061,7 +1065,12 @@ function Cotacoes({
     pacote: "📦",
     servicos: "🎫"
   };
-  const filtered = cotacoes.filter(c => (fNome === "" || (c.nome || "").toLowerCase().indexOf(fNome.toLowerCase()) > -1) && (fTipo === "todos" || c.tipo === fTipo));
+  const SDOT = {
+    pendente: "🟡",
+    cotacao: "🔵",
+    atuada: "🟢"
+  };
+  const filtered = cotacoes.filter(c => (fNome === "" || (c.nome || "").toLowerCase().indexOf(fNome.toLowerCase()) > -1) && (fTipo === "todos" || c.tipo === fTipo) && (fStatus === "todos" || (c.status || "pendente") === fStatus)).slice().sort((a, b) => ((a.status || "pendente") === "atuada" ? 1 : 0) - ((b.status || "pendente") === "atuada" ? 1 : 0));
   const periodo = c => c.periodoIni || c.periodoFim ? fmtDate(c.periodoIni) + " a " + fmtDate(c.periodoFim) : "";
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -1252,7 +1261,23 @@ function Cotacoes({
     value: "pacote"
   }, "Pacote"), /*#__PURE__*/React.createElement("option", {
     value: "servicos"
-  }, "Servi\xE7os")))), filtered.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Servi\xE7os")), /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 13
+    },
+    value: fStatus,
+    onChange: e => setFStatus(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "todos"
+  }, "Todas situa\xE7\xF5es"), /*#__PURE__*/React.createElement("option", {
+    value: "pendente"
+  }, "\uD83D\uDFE1 Pendente"), /*#__PURE__*/React.createElement("option", {
+    value: "cotacao"
+  }, "\uD83D\uDD35 Em cota\xE7\xE3o"), /*#__PURE__*/React.createElement("option", {
+    value: "atuada"
+  }, "\uD83D\uDFE2 Atuada")))), filtered.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "mut",
     style: {
       fontSize: 13
@@ -1265,7 +1290,8 @@ function Cotacoes({
       display: "flex",
       justifyContent: "space-between",
       gap: 8,
-      flexWrap: "wrap"
+      flexWrap: "wrap",
+      opacity: (c.status || "pendente") === "atuada" ? 0.55 : 1
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1305,7 +1331,26 @@ function Cotacoes({
       flexWrap: "wrap",
       alignItems: "flex-start"
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("select", {
+    value: c.status || "pendente",
+    onChange: e => onUpdate(c.id, {
+      ...c,
+      status: e.target.value
+    }),
+    className: "in",
+    style: {
+      width: "auto",
+      fontSize: 12,
+      padding: "5px 6px"
+    },
+    title: "Situa\xE7\xE3o"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "pendente"
+  }, "\uD83D\uDFE1 Pendente"), /*#__PURE__*/React.createElement("option", {
+    value: "cotacao"
+  }, "\uD83D\uDD35 Em cota\xE7\xE3o"), /*#__PURE__*/React.createElement("option", {
+    value: "atuada"
+  }, "\uD83D\uDFE2 Atuada")), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     onClick: () => onGerarOrc(c)
   }, "\uD83E\uDDFE Gerar or\xE7amento"), /*#__PURE__*/React.createElement("button", {
