@@ -835,7 +835,7 @@ async function saveTrip(t) {
   } = await sb.from("viagens").insert(toRow(t)).select().single();
   if (error) {
     console.error(error);
-    return t;
+    throw new Error(error.message || "Falha ao salvar viagem");
   }
   return fromRow(data);
 }
@@ -990,7 +990,7 @@ async function saveCotacao(c) {
   } = await sb.from("cotacoes").insert(cotRow(c)).select().single();
   if (error) {
     console.error(error);
-    return c;
+    throw new Error(error.message || "Falha ao salvar cotação");
   }
   return cotFrom(data);
 }
@@ -999,7 +999,10 @@ async function updateCotacaoFull(id, c) {
   const {
     error
   } = await sb.from("cotacoes").update(cotRow(c)).eq("id", id);
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    throw new Error(error.message || "Falha ao atualizar cotação");
+  }
 }
 async function deleteCotacao(id) {
   if (!sb || typeof id === "number") return;
@@ -1456,7 +1459,9 @@ function App() {
     try {
       const s = await saveTrip(t);
       if (s && s.id !== t.id) setTrips(p => p.map(x => x.id === t.id ? s : x));
-    } catch (e) {}
+    } catch (e) {
+      window.alert("⚠️ Apareceu na tela, mas NÃO foi salvo no banco:\n\n" + (e && e.message || e) + "\n\nProvável causa: falta rodar o SQL da coluna nova. Rode o SQL indicado e cadastre de novo — e não recarregue a página antes disso.");
+    }
   };
   const handleDelete = id => {
     setTrips(p => p.filter(x => x.id !== id));
@@ -1468,14 +1473,16 @@ function App() {
       id,
       createdAt: x.createdAt
     } : x));
-    updateTripFull(id, t).catch(() => {});
+    updateTripFull(id, t).catch(e => window.alert("⚠️ Alteração da viagem não foi salva no banco: " + (e && e.message || e)));
   };
   const handleSaveOrc = async o => {
     setOrcamentos(p => [o, ...p]);
     try {
       const r = await saveOrcamento(o);
       if (r && r.id !== o.id) setOrcamentos(p => p.map(x => x.id === o.id ? r : x));
-    } catch (e) {}
+    } catch (e) {
+      window.alert("⚠️ Apareceu na tela, mas NÃO foi salvo no banco:\n\n" + (e && e.message || e) + "\n\nProvável causa: falta rodar o SQL da coluna nova. Rode o SQL indicado e cadastre de novo — e não recarregue a página antes disso.");
+    }
   };
   const handleUpdateOrc = (id, status) => {
     setOrcamentos(p => p.map(x => x.id === id ? {
@@ -1495,7 +1502,7 @@ function App() {
       createdAt: x.createdAt,
       status: x.status
     } : x));
-    updateOrcamentoFull(id, o).catch(() => {});
+    updateOrcamentoFull(id, o).catch(e => window.alert("⚠️ Alteração do orçamento não foi salva no banco: " + (e && e.message || e)));
   };
   const [orcLoad, setOrcLoad] = useState(null);
   const [cotacoes, setCotacoes] = useState([]);
@@ -1509,7 +1516,9 @@ function App() {
     try {
       const r = await saveCotacao(c);
       if (r && r.id !== c.id) setCotacoes(p => p.map(x => x.id === c.id ? r : x));
-    } catch (e) {}
+    } catch (e) {
+      window.alert("⚠️ Apareceu na tela, mas NÃO foi salvo no banco:\n\n" + (e && e.message || e) + "\n\nProvável causa: falta rodar o SQL da coluna nova. Rode o SQL indicado e cadastre de novo — e não recarregue a página antes disso.");
+    }
   };
   const handleUpdateCot = (id, c) => {
     setCotacoes(p => p.map(x => x.id === id ? {
@@ -1517,7 +1526,7 @@ function App() {
       id,
       createdAt: x.createdAt
     } : x));
-    updateCotacaoFull(id, c).catch(() => {});
+    updateCotacaoFull(id, c).catch(e => window.alert("⚠️ Alteração da cotação não foi salva no banco: " + (e && e.message || e)));
   };
   const handleDeleteCot = id => {
     setCotacoes(p => p.filter(x => x.id !== id));
@@ -4895,7 +4904,7 @@ async function saveOrcamento(o) {
   } = await sb.from("orcamentos").insert(orcRow(o)).select().single();
   if (error) {
     console.error(error);
-    return o;
+    throw new Error(error.message || "Falha ao salvar orçamento");
   }
   return orcFrom(data);
 }
