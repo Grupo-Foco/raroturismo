@@ -1360,6 +1360,15 @@ function Cotacoes({
     className: "ghost",
     onClick: () => editar(c)
   }, "\u270F\uFE0F Editar"), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: () => onSave({
+      ...c,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      status: "pendente"
+    }),
+    title: "Duplicar (mant\xE9m hist\xF3rico)"
+  }, "\u29C9 Duplicar"), /*#__PURE__*/React.createElement("button", {
     className: "icn",
     onClick: () => {
       if (window.confirm("Excluir esta cotação?")) onDelete(c.id);
@@ -1913,6 +1922,61 @@ function FilePreview({
     },
     title: "preview"
   }))));
+}
+function DocModal({
+  open,
+  onClose,
+  children
+}) {
+  if (!open) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,.6)",
+      zIndex: 60,
+      overflow: "auto",
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: "#fff",
+      borderRadius: 10,
+      maxWidth: 820,
+      width: "100%",
+      margin: "0 auto",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      justifyContent: "space-between",
+      padding: "10px 14px",
+      borderBottom: `1px solid ${LINE}`,
+      position: "sticky",
+      top: 0,
+      background: "#fff",
+      zIndex: 2
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      fontSize: 13
+    }
+  }, "\uD83D\uDC41\uFE0F Pr\xE9-visualiza\xE7\xE3o"), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: onClose
+  }, "\u2715 Fechar")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 16,
+      background: "#F5F3EC"
+    }
+  }, children)));
 }
 function ExtrasForm({
   extras,
@@ -3573,6 +3637,7 @@ function Viagens({
   onEdit
 }) {
   const [fMes, setFMes] = useState("todos");
+  const [prev, setPrev] = useState(null);
   if (!trips.length) return /*#__PURE__*/React.createElement(Empty, {
     t: "Nenhuma viagem emitida ainda. Comece pela aba Emiss\xE3o."
   });
@@ -3679,12 +3744,21 @@ function Viagens({
       onClick: () => onEdit(t)
     }, "\u270F\uFE0F Editar"), /*#__PURE__*/React.createElement("button", {
       className: "ghost",
+      onClick: () => setPrev(t),
+      title: "Pr\xE9-visualizar"
+    }, "\uD83D\uDC41\uFE0F"), /*#__PURE__*/React.createElement("button", {
+      className: "ghost",
       onClick: () => printVoucher(t)
     }, "\uD83D\uDDA8\uFE0F"), /*#__PURE__*/React.createElement("button", {
       className: "icn",
       onClick: () => onDelete(t.id)
     }, "\uD83D\uDDD1\uFE0F")));
-  }));
+  }), /*#__PURE__*/React.createElement(DocModal, {
+    open: !!prev,
+    onClose: () => setPrev(null)
+  }, prev && /*#__PURE__*/React.createElement(Voucher, {
+    t: prev
+  })));
 }
 function Agenda({
   trips
@@ -4946,6 +5020,7 @@ function SavedOrcs({
   const [fStatus, setFStatus] = useState("todos");
   const [fMes, setFMes] = useState("todos");
   const [fNome, setFNome] = useState("");
+  const [prev, setPrev] = useState(null);
   const dot = st => ({
     pendente: MUTED,
     vendido: GREEN,
@@ -5080,11 +5155,20 @@ function SavedOrcs({
     onClick: () => onLoad(o)
   }, "\u270F\uFE0F Editar"), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
+    onClick: () => setPrev(o),
+    title: "Pr\xE9-visualizar"
+  }, "\uD83D\uDC41\uFE0F"), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
     onClick: () => printOrcamento(o)
   }, "\uD83D\uDDA8\uFE0F"), /*#__PURE__*/React.createElement("button", {
     className: "icn",
     onClick: () => onDelete(o.id)
-  }, "\uD83D\uDDD1\uFE0F"))));
+  }, "\uD83D\uDDD1\uFE0F"))), /*#__PURE__*/React.createElement(DocModal, {
+    open: !!prev,
+    onClose: () => setPrev(null)
+  }, prev && /*#__PURE__*/React.createElement(OrcamentoDoc, {
+    t: prev
+  })));
 }
 function Orcamento({
   onSaveOrc,
