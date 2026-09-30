@@ -384,6 +384,381 @@ const {
   useEffect
 } = React;
 
+/* ===== VÁRIOS HOTÉIS ===== */
+// ===== VÁRIOS HOTÉIS: helpers e componentes =====
+function emptyHotel() {
+  return {
+    nome: "",
+    endereco: "",
+    checkin: "",
+    checkout: "",
+    apartamentos: [""],
+    obs: ""
+  };
+}
+function getHoteis(t) {
+  if (t && Array.isArray(t.hoteis) && t.hoteis.length) return t.hoteis;
+  if (t && (t.hotelNome || t.checkin || t.hotelEndereco)) return [{
+    nome: t.hotelNome || "",
+    endereco: t.hotelEndereco || "",
+    checkin: t.checkin || "",
+    checkout: t.checkout || "",
+    apartamentos: t.apartamentos && t.apartamentos.length ? t.apartamentos : [""],
+    obs: t.observacoesHotel || ""
+  }];
+  return [];
+}
+function normHoteis(arr) {
+  return (arr || []).map(h => ({
+    nome: h.nome || "",
+    endereco: h.endereco || "",
+    checkin: h.checkin || "",
+    checkout: h.checkout || "",
+    apartamentos: h.apartamentos && h.apartamentos.length ? h.apartamentos : [""],
+    obs: h.obs || ""
+  }));
+}
+function HoteisForm({
+  hoteis,
+  onChange,
+  upper
+}) {
+  const list = hoteis && hoteis.length ? hoteis : [emptyHotel()];
+  const up = v => upper ? String(v).toUpperCase() : v;
+  const setH = (i, patch) => onChange(list.map((h, x) => x === i ? {
+    ...h,
+    ...patch
+  } : h));
+  const del = i => onChange(list.filter((_, x) => x !== i));
+  const add = () => onChange([...list, emptyHotel()]);
+  return /*#__PURE__*/React.createElement("div", null, list.map((h, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      border: `1px solid ${LINE}`,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: GREEN,
+      fontWeight: 700
+    }
+  }, "🏨 Hotel ", i + 1), list.length > 1 && /*#__PURE__*/React.createElement("button", {
+    className: "icn",
+    onClick: () => del(i),
+    title: "Remover hotel"
+  }, "🗑️")), /*#__PURE__*/React.createElement(Field, {
+    label: "Nome do hotel"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: h.nome,
+    placeholder: "Nome do hotel",
+    onChange: e => setH(i, {
+      nome: up(e.target.value)
+    })
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 10
+    }
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Endereço"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: h.endereco,
+    placeholder: "Endereço",
+    onChange: e => setH(i, {
+      endereco: up(e.target.value)
+    })
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "g2",
+    style: {
+      margin: "10px 0"
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Check-in"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "date",
+    value: h.checkin,
+    onChange: e => setH(i, {
+      checkin: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Check-out"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "date",
+    value: h.checkout,
+    min: h.checkin || undefined,
+    onChange: e => setH(i, {
+      checkout: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: MUTED,
+      fontWeight: 600
+    }
+  }, "Apartamentos"), (h.apartamentos && h.apartamentos.length ? h.apartamentos : [""]).map((a, ai) => /*#__PURE__*/React.createElement("div", {
+    key: ai,
+    className: "row",
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: a,
+    placeholder: "Ex.: Standard Duplo",
+    onChange: e => {
+      const ap = (h.apartamentos || [""]).map((x, xi) => xi === ai ? up(e.target.value) : x);
+      setH(i, {
+        apartamentos: ap
+      });
+    }
+  }), (h.apartamentos || []).length > 1 && /*#__PURE__*/React.createElement("button", {
+    className: "icn",
+    onClick: () => setH(i, {
+      apartamentos: h.apartamentos.filter((_, xi) => xi !== ai)
+    })
+  }, "🗑️"))), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    style: {
+      marginTop: 8
+    },
+    onClick: () => setH(i, {
+      apartamentos: [...(h.apartamentos || [""]), ""]
+    })
+  }, "＋ Apartamento"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Observações do hotel (políticas, reembolso, etc.)"
+  }, /*#__PURE__*/React.createElement("textarea", {
+    className: "in",
+    value: h.obs,
+    placeholder: "Ex.: Hotel não reembolsável em caso de alteração.",
+    onChange: e => setH(i, {
+      obs: up(e.target.value)
+    })
+  }))))), /*#__PURE__*/React.createElement("button", {
+    className: "ghost",
+    onClick: add
+  }, "＋ Hotel"));
+}
+function HospedagemVoucher({
+  t
+}) {
+  const hs = getHoteis(t);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {style: {background: GREEN,color: "#fff",fontSize: 11,fontWeight: 700,letterSpacing: ".5px",padding: "6px 10px",borderRadius: 4,margin: "14px 0 8px"}}, "HOSPEDAGEM"), hs.map((h, i) => {
+    const n = noites(h.checkin, h.checkout);
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        marginTop: i > 0 ? 14 : 0,
+        paddingTop: i > 0 ? 14 : 0,
+        borderTop: i > 0 ? `1px dashed ${LINE}` : "none"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, h.nome || "—"), h.endereco && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: MUTED,
+        marginBottom: 6
+      }
+    }, h.endereco), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        marginTop: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        background: "#F1F6F2",
+        borderRadius: 8,
+        padding: "8px 12px",
+        borderLeft: `3px solid ${GREEN}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: MUTED,
+        fontWeight: 700
+      }
+    }, "CHECK-IN"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, fmtDate(h.checkin))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: GOLD,
+        color: GREEN,
+        fontWeight: 700,
+        fontSize: 11,
+        padding: "3px 8px",
+        borderRadius: 20
+      }
+    }, n, " ", n === 1 ? "noite" : "noites")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        background: "#FBF6E8",
+        borderRadius: 8,
+        padding: "8px 12px",
+        borderLeft: `3px solid ${GOLD}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: MUTED,
+        fontWeight: 700
+      }
+    }, "CHECK-OUT"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, fmtDate(h.checkout)))), (h.apartamentos || []).filter(a => a.trim()).length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: MUTED,
+        fontWeight: 700
+      }
+    }, "ACOMODAÇÃO"), h.apartamentos.filter(a => a.trim()).map((a, ai) => /*#__PURE__*/React.createElement("div", {
+      key: ai,
+      style: {
+        fontSize: 12,
+        fontWeight: 600
+      }
+    }, "• ", a))), h.obs && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: MUTED,
+        fontStyle: "italic",
+        marginTop: 8,
+        lineHeight: 1.5
+      }
+    }, "» ", h.obs));
+  }));
+}
+function HospedagemOrc({
+  t
+}) {
+  const hs = getHoteis(t);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      border: `1px solid ${LINE}`,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 800,
+      fontSize: 11,
+      color: GREEN,
+      marginBottom: 6
+    }
+  }, "🏨 HOSPEDAGEM"), hs.map((h, i) => {
+    const n = noites(h.checkin, h.checkout);
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        marginTop: i > 0 ? 10 : 0,
+        paddingTop: i > 0 ? 10 : 0,
+        borderTop: i > 0 ? `1px dashed ${LINE}` : "none"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 700
+      }
+    }, h.nome || "—"), h.endereco && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: MUTED
+      }
+    }, h.endereco), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 14,
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement(OrcMeta, {
+      label: "Check-in",
+      value: fmtDate(h.checkin)
+    }), /*#__PURE__*/React.createElement(OrcMeta, {
+      label: "Check-out",
+      value: fmtDate(h.checkout)
+    }), n > 0 && /*#__PURE__*/React.createElement(OrcMeta, {
+      label: "Noites",
+      value: String(n)
+    })), (h.apartamentos || []).filter(a => a.trim()).length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 6,
+        fontSize: 12
+      }
+    }, h.apartamentos.filter(a => a.trim()).map((a, ai) => /*#__PURE__*/React.createElement("div", {
+      key: ai
+    }, "• ", a))), h.obs && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: MUTED,
+        fontStyle: "italic",
+        marginTop: 6
+      }
+    }, "» ", h.obs));
+  }), t.fotosHotel && t.fotosHotel.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginTop: 8,
+      flexWrap: "wrap"
+    }
+  }, t.fotosHotel.map((f, i) => /*#__PURE__*/React.createElement("img", {
+    key: i,
+    src: f,
+    style: {
+      width: 92,
+      height: 66,
+      objectFit: "cover",
+      borderRadius: 6
+    }
+  }))));
+}
+function hotelPrintVoucher(h) {
+  const n = noites(h.checkin, h.checkout);
+  return '<div style="margin-top:8px"><div style="font-weight:700">' + (h.nome || "—") + '</div><div style="font-size:11px;color:#6B7A70;margin-bottom:6px">' + (h.endereco || "") + '</div><div style="display:flex;gap:10px;margin-top:6px"><div style="flex:1;background:#F1F6F2;border-left:3px solid ' + GREEN + ';border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-IN</div><div style="font-weight:700">' + fmtDate(h.checkin) + '</div></div><div style="display:flex;align-items:center"><span style="background:' + GOLD + ';color:' + GREEN + ';font-weight:700;font-size:11px;padding:3px 8px;border-radius:20px">' + n + ' ' + (n === 1 ? "noite" : "noites") + '</span></div><div style="flex:1;background:#FBF6E8;border-left:3px solid ' + GOLD + ';border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-OUT</div><div style="font-weight:700">' + fmtDate(h.checkout) + '</div></div></div>' + ((h.apartamentos || []).filter(a => a.trim()).length ? '<div style="margin-top:8px"><div style="font-size:9px;color:#6B7A70;font-weight:700">ACOMODAÇÃO</div>' + h.apartamentos.filter(a => a.trim()).map(a => '<div style="font-weight:600;font-size:12px">• ' + a + '</div>').join("") + '</div>' : "") + (h.obs ? '<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ' + h.obs + '</div>' : "") + '</div>';
+}
+function hotelPrintOrc(h, meta, hi) {
+  const n = noites(h.checkin, h.checkout);
+  const sep = hi > 0 ? 'margin-top:10px;padding-top:10px;border-top:1px dashed ' + LINE : '';
+  return '<div style="' + sep + '"><div style="font-weight:700">' + (h.nome || "—") + '</div><div style="font-size:11px;color:#6B7A70">' + (h.endereco || "") + '</div><div style="display:flex;gap:14px;margin-top:8px">' + meta("Check-in", fmtDate(h.checkin)) + meta("Check-out", fmtDate(h.checkout)) + (n > 0 ? meta("Noites", String(n)) : "") + '</div>' + ((h.apartamentos || []).filter(a => a.trim()).length ? '<div style="margin-top:6px;font-size:12px">' + h.apartamentos.filter(a => a.trim()).map(a => '<div>• ' + a + '</div>').join("") + '</div>' : "") + (h.obs ? '<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:6px">» ' + h.obs + '</div>' : "") + '</div>';
+}
+
+
 /* ═══════════════ CONFIG — preencha depois de criar no Supabase ═══════════════ */
 const CONFIG = {
   SUPABASE_URL: "https://vxuljfqwhpmxeucaaeyf.supabase.co",
@@ -650,7 +1025,7 @@ const isGolSmiles = t => /gol|smiles/i.test([t.companhia, t.fornecedorMilhas, ..
 const hasAereo = t => t.tipo === "aereo" || t.tipo === "pacote";
 const hasHotel = t => t.tipo === "hotel" || t.tipo === "pacote";
 const temVoo = t => (t.trechos || []).some(x => x.origem || x.destino || x.voo || x.data);
-const temHotel = t => !!(t.hotelNome || t.checkin);
+const temHotel = t => getHoteis(t).some(h => h.nome || h.checkin);
 const temExtra = t => {
   const e = t.extras || {};
   return e.carro && e.carro.on || e.ingresso && e.ingresso.on || e.seguro && e.seguro.on;
@@ -745,6 +1120,7 @@ const emptyForm = () => ({
   },
   observacoes: "",
   observacoesHotel: "",
+  hoteis: [emptyHotel()],
   hotelNome: "",
   hotelEndereco: "",
   checkin: "",
@@ -770,11 +1146,12 @@ const toRow = t => ({
   localizador: t.localizador || null,
   observacoes: t.observacoes || null,
   trechos: t.trechos || [],
-  hotel_nome: t.hotelNome || null,
-  hotel_endereco: t.hotelEndereco || null,
-  checkin: t.checkin || null,
-  checkout: t.checkout || null,
-  apartamentos: (t.apartamentos || []).filter(Boolean),
+  hotel_nome: (getHoteis(t)[0] || {}).nome || null,
+  hotel_endereco: (getHoteis(t)[0] || {}).endereco || null,
+  checkin: (getHoteis(t)[0] || {}).checkin || null,
+  checkout: (getHoteis(t)[0] || {}).checkout || null,
+  apartamentos: ((getHoteis(t)[0] || {}).apartamentos || []).filter(Boolean),
+  hoteis: normHoteis(getHoteis(t)),
   custo: money(t.custo),
   receita: money(t.receita),
   pagamento: t.pagamento || null,
@@ -799,6 +1176,7 @@ const fromRow = r => ({
   checkin: r.checkin || "",
   checkout: r.checkout || "",
   apartamentos: r.apartamentos && r.apartamentos.length ? r.apartamentos : [""],
+  hoteis: r.hoteis && r.hoteis.length ? normHoteis(r.hoteis) : (r.hotel_nome || r.checkin ? [{ nome: r.hotel_nome || "", endereco: r.hotel_endereco || "", checkin: r.checkin || "", checkout: r.checkout || "", apartamentos: r.apartamentos && r.apartamentos.length ? r.apartamentos : [""], obs: "" }] : [emptyHotel()]),
   custo: r.custo != null ? String(r.custo) : "",
   receita: r.receita != null ? String(r.receita) : "",
   pagamento: r.pagamento || "pix",
@@ -2436,6 +2814,7 @@ function Emissao({
         checkin: p.checkin || "",
         checkout: p.checkout || "",
         apartamentos: p.apartamentos && p.apartamentos.length ? p.apartamentos : [""],
+        hoteis: p.hotelNome || p.checkin ? [{ nome: p.hotelNome || "", endereco: p.hotelEndereco || "", checkin: p.checkin || "", checkout: p.checkout || "", apartamentos: p.apartamentos && p.apartamentos.length ? p.apartamentos : [""], obs: p.observacoesHotel || "" }] : [emptyHotel()],
         extras: mergeExtras(p.extras)
       });
     } catch (e) {
@@ -2943,103 +3322,11 @@ function Emissao({
       borderTop: `1px dashed ${LINE}`,
       paddingTop: 14
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: GREEN,
-      fontWeight: 700,
-      marginBottom: 8
-    }
-  }, "\uD83C\uDFE8 Hotel"), /*#__PURE__*/React.createElement(Field, {
-    label: "Hotel"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    value: form.hotelNome,
-    placeholder: "Nome do hotel",
-    onChange: e => set({
-      hotelNome: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 10
-    }
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Endere\xE7o"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    value: form.hotelEndereco,
-    placeholder: "Endere\xE7o",
-    onChange: e => set({
-      hotelEndereco: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "g2",
-    style: {
-      margin: "10px 0"
-    }
-  }, /*#__PURE__*/React.createElement(Field, {
-    label: "Check-in"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    type: "date",
-    value: form.checkin,
-    onChange: e => set({
-      checkin: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement(Field, {
-    label: "Check-out"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    type: "date",
-    value: form.checkout,
-    min: form.checkin || undefined,
-    onChange: e => set({
-      checkout: e.target.value
-    })
+  }, /*#__PURE__*/React.createElement(HoteisForm, {
+    hoteis: getHoteis(form),
+    onChange: hs => set({ hoteis: hs }),
+    upper: true
   }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: MUTED,
-      fontWeight: 600
-    }
-  }, "Apartamentos"), form.apartamentos.map((a, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "row",
-    style: {
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    value: a,
-    placeholder: "Ex.: Standard Duplo",
-    onChange: e => upd("apartamentos", i, e.target.value)
-  }), form.apartamentos.length > 1 && /*#__PURE__*/React.createElement("button", {
-    className: "icn",
-    onClick: () => set({
-      apartamentos: form.apartamentos.filter((_, x) => x !== i)
-    })
-  }, "\uD83D\uDDD1\uFE0F"))), /*#__PURE__*/React.createElement("button", {
-    className: "ghost",
-    style: {
-      marginTop: 8
-    },
-    onClick: () => set({
-      apartamentos: [...form.apartamentos, ""]
-    })
-  }, "\uFF0B Apartamento"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement(Field, {
-    label: "Observa\xE7\xF5es do hotel (pol\xEDticas, reembolso, etc.)"
-  }, /*#__PURE__*/React.createElement("textarea", {
-    className: "in",
-    value: form.observacoesHotel,
-    placeholder: "Ex.: Hotel n\xE3o reembols\xE1vel em caso de altera\xE7\xE3o.",
-    onChange: e => set({
-      observacoesHotel: e.target.value.toUpperCase()
-    })
-  }))))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "st",
@@ -3231,7 +3518,7 @@ function Voucher({
     voltas = (t.trechos || []).filter(x => x.direcao === "volta");
   const n = noites(t.checkin, t.checkout);
   const pax = t.passageiros.filter(p => p.trim());
-  const right = (hasAereo(t) ? t.companhia || "" : t.hotelNome || "").toUpperCase();
+  const right = (hasAereo(t) ? t.companhia || "" : (getHoteis(t)[0] || {}).nome || "").toUpperCase();
   let notes = t.observacoes || "";
   const bag = t.bag || {};
   const bagChips = [];
@@ -3377,7 +3664,7 @@ function Voucher({
     value: t.companhia
   }), hasHotel(t) && !hasAereo(t) && /*#__PURE__*/React.createElement(Meta, {
     label: "HOTEL",
-    value: t.hotelNome || "—"
+    value: (getHoteis(t)[0] || {}).nome || "—"
   }), /*#__PURE__*/React.createElement(Meta, {
     label: "EMISS\xC3O",
     value: t.dataEmissao ? fmtDate(t.dataEmissao) : today()
@@ -3479,100 +3766,9 @@ function Voucher({
     key: j,
     txt: c[0],
     red: c[1]
-  }))))), hasHotel(t) && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Barr, null, "HOSPEDAGEM"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700
-    }
-  }, t.hotelNome || "—"), t.hotelEndereco && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: MUTED,
-      marginBottom: 6
-    }
-  }, t.hotelEndereco), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      marginTop: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      background: "#F1F6F2",
-      borderRadius: 8,
-      padding: "8px 12px",
-      borderLeft: `3px solid ${GREEN}`
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      color: MUTED,
-      fontWeight: 700
-    }
-  }, "CHECK-IN"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700
-    }
-  }, fmtDate(t.checkin))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      background: GOLD,
-      color: GREEN,
-      fontWeight: 700,
-      fontSize: 11,
-      padding: "3px 8px",
-      borderRadius: 20
-    }
-  }, n, " ", n === 1 ? "noite" : "noites")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      background: "#FBF6E8",
-      borderRadius: 8,
-      padding: "8px 12px",
-      borderLeft: `3px solid ${GOLD}`
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      color: MUTED,
-      fontWeight: 700
-    }
-  }, "CHECK-OUT"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700
-    }
-  }, fmtDate(t.checkout)))), t.apartamentos.filter(a => a.trim()).length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      color: MUTED,
-      fontWeight: 700
-    }
-  }, "ACOMODA\xC7\xC3O"), t.apartamentos.filter(a => a.trim()).map((a, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      fontSize: 12,
-      fontWeight: 600
-    }
-  }, "\u2022 ", a))), t.observacoesHotel && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: MUTED,
-      fontStyle: "italic",
-      marginTop: 8,
-      lineHeight: 1.5
-    }
-  }, "\xBB ", t.observacoesHotel)), /*#__PURE__*/React.createElement(ExtrasView, {
+  }))))), hasHotel(t) && /*#__PURE__*/React.createElement(HospedagemVoucher, {
+    t: t
+  }), /*#__PURE__*/React.createElement(ExtrasView, {
     extras: t.extras
   }), /*#__PURE__*/React.createElement(Barr, null, paxLabel(t) + (pax.length ? " — " + pax.length + " " + (pax.length === 1 ? paxTerm(t) : paxTerm(t) + "s") : "")), pax.length ? pax.map((p, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -3682,7 +3878,7 @@ function Viagens({
     const _base = _idas.length ? _idas : t.trechos || [];
     const _orig = _base[0] && _base[0].origem || "?";
     const _dest = _base[_base.length - 1] && _base[_base.length - 1].destino || "?";
-    const titulo = t.tipo === "hotel" ? t.hotelNome || "Hotel" : _orig + " → " + _dest + (t.tipo === "pacote" && t.hotelNome ? " + " + t.hotelNome : "");
+    const titulo = t.tipo === "hotel" ? (getHoteis(t)[0] || {}).nome || "Hotel" : _orig + " → " + _dest + (t.tipo === "pacote" && (getHoteis(t)[0] || {}).nome ? " + " + (getHoteis(t)[0] || {}).nome : "");
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
       className: "card",
@@ -4241,7 +4437,7 @@ function printVoucher(t) {
     voltas = (t.trechos || []).filter(x => x.direcao === "volta");
   const n = noites(t.checkin, t.checkout);
   const pax = t.passageiros.filter(p => p.trim());
-  const right = (hasAereo(t) ? t.companhia || "" : t.hotelNome || "").toUpperCase();
+  const right = (hasAereo(t) ? t.companhia || "" : (getHoteis(t)[0] || {}).nome || "").toUpperCase();
   let notes = t.observacoes || "";
   const bag = t.bag || {};
   const bagChips = [];
@@ -4259,10 +4455,10 @@ function printVoucher(t) {
       return '<span style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;background:' + (c[1] ? "#FBECE8" : "#EEF4EF") + ';color:' + (c[1] ? "#B4472E" : GREEN) + ';border:1px solid ' + (c[1] ? "#EAD0C8" : "#D6E4DA") + ';margin:0 6px 4px 0">' + c[0] + '</span>';
     }).join("") + '</div>';
   }).join("")}` : "";
-  const hotel = hasHotel(t) ? bar("HOSPEDAGEM") + `<div style="font-weight:700">${t.hotelNome || "—"}</div><div style="font-size:11px;color:#6B7A70;margin-bottom:6px">${t.hotelEndereco || ""}</div><div style="display:flex;gap:10px;margin-top:6px"><div style="flex:1;background:#F1F6F2;border-left:3px solid ${GREEN};border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-IN</div><div style="font-weight:700">${fmtDate(t.checkin)}</div></div><div style="display:flex;align-items:center"><span style="background:${GOLD};color:${GREEN};font-weight:700;font-size:11px;padding:3px 8px;border-radius:20px">${n} ${n === 1 ? "noite" : "noites"}</span></div><div style="flex:1;background:#FBF6E8;border-left:3px solid ${GOLD};border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-OUT</div><div style="font-weight:700">${fmtDate(t.checkout)}</div></div></div>${t.apartamentos.filter(a => a.trim()).length ? `<div style="margin-top:8px"><div style="font-size:9px;color:#6B7A70;font-weight:700">ACOMODAÇÃO</div>${t.apartamentos.filter(a => a.trim()).map(a => `<div style="font-weight:600;font-size:12px">• ${a}</div>`).join("")}</div>` : ""}${t.observacoesHotel ? `<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ${t.observacoesHotel}</div>` : ""}` : "";
+  const hotel = hasHotel(t) ? bar("HOSPEDAGEM") + getHoteis(t).map(function (h) { return hotelPrintVoucher(h); }).join("") : "";
   const paxRows = pax.map((p, i) => `<div style="display:flex;gap:12px;padding:5px 6px;background:${i % 2 ? "#FAFAF6" : "#fff"};font-size:12px"><span style="color:#6B7A70;font-weight:700;min-width:44px">Pax ${i + 1}</span><span style="font-weight:600">${p}</span></div>`).join("");
   const imp = hasAereo(t) ? `<div style="margin-top:12px;background:${CREAM};border-left:3px solid ${GOLD};padding:8px 10px;border-radius:4px;font-size:10.5px;color:#5A4A1E"><b>IMPORTANTE:</b> ${IMPORTANTE_AÉREO}</div>` : "";
-  const metaRow = `<div style="display:flex;gap:16px;flex-wrap:wrap">${hasAereo(t) ? `${t.localizador ? `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">LOCALIZADOR</div><div style="font-weight:700">${t.localizador}</div></div>` : ""}${t.companhia ? `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">COMPANHIA</div><div style="font-weight:700">${t.companhia}</div></div>` : ""}` : `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">HOTEL</div><div style="font-weight:700">${t.hotelNome || "—"}</div></div>`}<div><div style="font-size:9px;color:#6B7A70;font-weight:700">EMISSÃO</div><div style="font-weight:700">${today()}</div></div></div>`;
+  const metaRow = `<div style="display:flex;gap:16px;flex-wrap:wrap">${hasAereo(t) ? `${t.localizador ? `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">LOCALIZADOR</div><div style="font-weight:700">${t.localizador}</div></div>` : ""}${t.companhia ? `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">COMPANHIA</div><div style="font-weight:700">${t.companhia}</div></div>` : ""}` : `<div><div style="font-size:9px;color:#6B7A70;font-weight:700">HOTEL</div><div style="font-weight:700">${(getHoteis(t)[0] || {}).nome || "—"}</div></div>`}<div><div style="font-size:9px;color:#6B7A70;font-weight:700">EMISSÃO</div><div style="font-weight:700">${today()}</div></div></div>`;
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Voucher RaRo</title><style>*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}@page{margin:8mm}</style></head><body style="margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:${INK};background:#fff"><div style="max-width:660px;margin:24px auto;position:relative;border:1px solid ${LINE};border-radius:10px;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:${GOLD}"></div><div style="position:absolute;right:0;top:0;bottom:0;width:6px;background:${GOLD}"></div><div style="background:${GREEN};padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${GOLD}"><div style="line-height:1.2"><div style="color:#fff;font-size:15px;font-weight:700">RaRo Turismo</div><div style="color:${GOLD_SOFT};font-size:9px;font-style:italic">Viagens Raras a Preços Raros</div></div><img src="${LOGO}" style="height:72px"/><div style="text-align:right"><div style="color:${GOLD};font-size:17px;font-weight:800;letter-spacing:1px">${meta.badge}</div>${right ? `<div style="color:${GREEN};background:${GOLD};font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block">${right}</div>` : ""}</div></div><div style="padding:16px 22px"><div style="font-size:17px;font-weight:800;color:${GREEN}">${meta.title}</div><div style="font-size:11px;color:#6B7A70">${meta.sub}</div><div style="height:2px;background:${GOLD};opacity:.5;margin:10px 0"></div>${metaRow}${aereo}${hotel}${extrasHTML(t.extras)}${bar(paxLabel(t) + (pax.length ? " — " + pax.length + " " + (pax.length === 1 ? paxTerm(t) : paxTerm(t) + "s") : ""))}${paxRows}${imp}<div style="margin-top:14px;padding-top:8px;border-top:1px solid ${LINE};text-align:center"><div style="font-size:10px;color:${GREEN};font-weight:600">${FOOTER_L}</div><div style="font-size:9px;color:#6B7A70;font-style:italic">${FOOTER_R}</div></div></div></div><script>window.onload=function(){var i=document.images,n=i.length,d=0;function go(){if(++d>=n)setTimeout(function(){window.print()},80);}if(!n){window.print();}else{for(var k=0;k<n;k++){if(i[k].complete)go();else{i[k].onload=go;i[k].onerror=go;}}}}<\/script></body></html>`;
   const w = window.open("", "_blank");
   if (w) {
@@ -4400,6 +4596,7 @@ function emptyOrc() {
     checkin: "",
     checkout: "",
     apartamentos: [""],
+    hoteis: [emptyHotel()],
     fotosDestino: [],
     fotosHotel: [],
     preco: "",
@@ -4678,68 +4875,9 @@ function OrcamentoDoc({
     key: j,
     txt: c[0],
     red: c[1]
-  }))))), hasHotel(t) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      border: `1px solid ${LINE}`,
-      borderRadius: 10,
-      padding: 12,
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 800,
-      fontSize: 11,
-      color: GREEN,
-      marginBottom: 6
-    }
-  }, "\uD83C\uDFE8 HOSPEDAGEM"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700
-    }
-  }, t.hotelNome || "—"), t.hotelEndereco && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: MUTED
-    }
-  }, t.hotelEndereco), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 14,
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement(OrcMeta, {
-    label: "Check-in",
-    value: fmtDate(t.checkin)
-  }), /*#__PURE__*/React.createElement(OrcMeta, {
-    label: "Check-out",
-    value: fmtDate(t.checkout)
-  }), n > 0 && /*#__PURE__*/React.createElement(OrcMeta, {
-    label: "Noites",
-    value: String(n)
-  })), t.apartamentos.filter(a => a.trim()).length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 6,
-      fontSize: 12
-    }
-  }, t.apartamentos.filter(a => a.trim()).map((a, i) => /*#__PURE__*/React.createElement("div", {
-    key: i
-  }, "\u2022 ", a))), t.fotosHotel.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      marginTop: 8,
-      flexWrap: "wrap"
-    }
-  }, t.fotosHotel.map((f, i) => /*#__PURE__*/React.createElement("img", {
-    key: i,
-    src: f,
-    style: {
-      width: 92,
-      height: 66,
-      objectFit: "cover",
-      borderRadius: 6
-    }
-  })))), t.fotosDestino.length > 1 && /*#__PURE__*/React.createElement("div", {
+  }))))), hasHotel(t) && /*#__PURE__*/React.createElement(HospedagemOrc, {
+    t: t
+  }), t.fotosDestino.length > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -4850,7 +4988,7 @@ function printOrcamento(t) {
       return chip(c[0], c[1]);
     }).join("") + '</div>';
   }).join("") : "";
-  const hotel = hasHotel(t) ? `<div style="border:1px solid ${LINE};border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-weight:800;font-size:11px;color:${GREEN};margin-bottom:4px">HOSPEDAGEM</div><div style="font-weight:700">${t.hotelNome || "—"}</div><div style="font-size:11px;color:#6B7A70">${t.hotelEndereco || ""}</div><div style="display:flex;gap:14px;margin-top:8px">${meta("Check-in", fmtDate(t.checkin))}${meta("Check-out", fmtDate(t.checkout))}${n > 0 ? meta("Noites", String(n)) : ""}</div>${t.apartamentos.filter(a => a.trim()).length ? `<div style="margin-top:6px;font-size:12px">${t.apartamentos.filter(a => a.trim()).map(a => `<div>• ${a}</div>`).join("")}</div>` : ""}${t.fotosHotel.length ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${t.fotosHotel.map(f => `<img src="${f}" style="width:84px;height:58px;object-fit:cover;border-radius:6px"/>`).join("")}</div>` : ""}</div>` : "";
+  const hotel = hasHotel(t) ? `<div style="border:1px solid ${LINE};border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-weight:800;font-size:11px;color:${GREEN};margin-bottom:4px">HOSPEDAGEM</div>${getHoteis(t).map(function (h, hi) { return hotelPrintOrc(h, meta, hi); }).join("")}${t.fotosHotel.length ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${t.fotosHotel.map(function (f) { return `<img src="${f}" style="width:84px;height:58px;object-fit:cover;border-radius:6px"/>`; }).join("")}</div>` : ""}</div>` : "";
   const heroImg = t.fotosDestino[0] ? `<img src="${t.fotosDestino[0]}" style="width:100%;height:120px;object-fit:cover;display:block"/>` : "";
   const galeria = t.fotosDestino.length > 1 ? `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">${t.fotosDestino.slice(1).map(f => `<img src="${f}" style="width:90px;height:62px;object-fit:cover;border-radius:6px"/>`).join("")}</div>` : "";
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Orcamento RaRo</title><style>*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}@page{margin:8mm}</style></head><body style="margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:${INK};background:#fff"><div style="max-width:680px;margin:8px auto;border:1px solid ${LINE};border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid ${LINE}"><img src="${LOGO}" style="height:72px"/><div style="text-align:center"><div style="color:${GREEN};font-size:16px;font-weight:800">PROPOSTA DE VIAGEM</div><div style="display:inline-block;background:${GREEN};color:${GOLD_SOFT};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:3px">COTAÇÃO ${(t.destino || "").toUpperCase()}</div></div><div style="text-align:right;font-size:9.5px;color:#6B7A70;line-height:1.5"><div style="color:${GREEN};font-weight:700;font-size:12px">Raro Turismo</div><div>${RARO_CONTATO.cnpj}</div><div>${RARO_CONTATO.tel}</div><div>${RARO_CONTATO.email}</div><div>@${RARO_CONTATO.insta}</div></div></div><div style="height:3px;background:${GOLD}"></div><div style="padding:10px 16px"><div style="border-radius:10px;overflow:hidden;margin-bottom:12px;border:1px solid ${LINE}">${heroImg}<div style="background:${GREEN};padding:8px 14px"><div style="font-size:9px;letter-spacing:2px;color:${GOLD_SOFT}">SEU DESTINO</div><div style="font-size:20px;font-weight:800;color:#fff">${t.destino || "—"}</div></div></div><div style="display:flex;gap:20px;margin-bottom:8px">${t.cliente ? meta("CLIENTE", t.cliente) : ""}${t.passageiros ? meta(paxLabel(t), t.passageiros) : ""}${hasAereo(t) && t.companhia ? meta("COMPANHIA", t.companhia) : ""}</div>${voos}${hotel}${galeria}${extrasHTML(t.extras)}<div style="background:${GREEN};border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-size:10px;color:${GOLD_SOFT};letter-spacing:1px">INVESTIMENTO TOTAL</div><div style="font-size:22px;font-weight:800;color:${GOLD}">${precoFmt(t.preco)}</div></div><div style="text-align:right;font-size:12px;color:#fff;max-width:55%"><div style="font-size:10px;color:${GOLD_SOFT};letter-spacing:1px">FORMA DE PAGAMENTO</div><div>${t.pagamento || "A combinar"}</div></div></div>${t.observacoes ? `<div style="margin-top:12px"><div style="font-weight:800;font-size:11px;color:${GREEN}">OUTRAS INFORMAÇÕES</div><div style="font-size:12px">${t.observacoes}</div></div>` : ""}<div style="margin-top:14px;padding-top:8px;border-top:1px solid ${LINE};text-align:center"><div style="font-size:9px;color:#6B7A70;font-style:italic">${t.validade || ""}</div><div style="font-size:10px;color:${GREEN};font-weight:600;margin-top:2px">${FOOTER_L}</div></div></div></div><script>window.onload=function(){var i=document.images,n=i.length,d=0;function go(){if(++d>=n)setTimeout(function(){window.print()},80);}if(!n){window.print();}else{for(var k=0;k<n;k++){if(i[k].complete)go();else{i[k].onload=go;i[k].onerror=go;}}}}<\/script></body></html>`;
@@ -4915,11 +5053,12 @@ const orcRow = o => ({
   companhia: o.companhia || null,
   trechos: o.trechos || [],
   bag: o.bag || {},
-  hotel_nome: o.hotelNome || null,
-  hotel_endereco: o.hotelEndereco || null,
-  checkin: o.checkin || null,
-  checkout: o.checkout || null,
-  apartamentos: o.apartamentos || [],
+  hotel_nome: (getHoteis(o)[0] || {}).nome || null,
+  hotel_endereco: (getHoteis(o)[0] || {}).endereco || null,
+  checkin: (getHoteis(o)[0] || {}).checkin || null,
+  checkout: (getHoteis(o)[0] || {}).checkout || null,
+  apartamentos: (getHoteis(o)[0] || {}).apartamentos || [],
+  hoteis: normHoteis(getHoteis(o)),
   fotos_destino: o.fotosDestino || [],
   fotos_hotel: o.fotosHotel || [],
   preco: o.preco || null,
@@ -4948,6 +5087,7 @@ const orcFrom = r => ({
   checkin: r.checkin || "",
   checkout: r.checkout || "",
   apartamentos: r.apartamentos && r.apartamentos.length ? r.apartamentos : [""],
+  hoteis: r.hoteis && r.hoteis.length ? normHoteis(r.hoteis) : (r.hotel_nome || r.checkin ? [{ nome: r.hotel_nome || "", endereco: r.hotel_endereco || "", checkin: r.checkin || "", checkout: r.checkout || "", apartamentos: r.apartamentos && r.apartamentos.length ? r.apartamentos : [""], obs: "" }] : [emptyHotel()]),
   fotosDestino: r.fotos_destino || [],
   fotosHotel: r.fotos_hotel || [],
   preco: r.preco || "",
@@ -5328,6 +5468,7 @@ function Orcamento({
         checkin: p.checkin || "",
         checkout: p.checkout || "",
         apartamentos: p.apartamentos && p.apartamentos.length ? p.apartamentos : [""],
+        hoteis: p.hotelNome || p.checkin ? [{ nome: p.hotelNome || "", endereco: p.hotelEndereco || "", checkin: p.checkin || "", checkout: p.checkout || "", apartamentos: p.apartamentos && p.apartamentos.length ? p.apartamentos : [""], obs: p.observacoesHotel || "" }] : [emptyHotel()],
         observacoes: p.observacoes || "",
         extras: mergeExtras(p.extras)
       });
@@ -5848,83 +5989,11 @@ function Orcamento({
       borderTop: `1px dashed ${LINE}`,
       paddingTop: 12
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: GREEN,
-      fontWeight: 700,
-      marginBottom: 8
-    }
-  }, "\uD83C\uDFE8 Hotel"), /*#__PURE__*/React.createElement(Field, {
-    label: "Hotel"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    value: form.hotelNome,
-    placeholder: "Nome do hotel",
-    onChange: e => set({
-      hotelNome: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 8
-    }
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Endere\xE7o"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    value: form.hotelEndereco,
-    onChange: e => set({
-      hotelEndereco: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "g2",
-    style: {
-      margin: "8px 0"
-    }
-  }, /*#__PURE__*/React.createElement(Field, {
-    label: "Check-in"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    type: "date",
-    value: form.checkin,
-    onChange: e => set({
-      checkin: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement(Field, {
-    label: "Check-out"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    type: "date",
-    value: form.checkout,
-    min: form.checkin || undefined,
-    onChange: e => set({
-      checkout: e.target.value
-    })
-  }))), form.apartamentos.map((a, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "row",
-    style: {
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "in",
-    value: a,
-    placeholder: "Acomoda\xE7\xE3o",
-    onChange: e => upd("apartamentos", i, e.target.value)
-  }), form.apartamentos.length > 1 && /*#__PURE__*/React.createElement("button", {
-    className: "icn",
-    onClick: () => set({
-      apartamentos: form.apartamentos.filter((_, x) => x !== i)
-    })
-  }, "\uD83D\uDDD1\uFE0F"))), /*#__PURE__*/React.createElement("button", {
-    className: "ghost",
-    style: {
-      marginTop: 8
-    },
-    onClick: () => set({
-      apartamentos: [...form.apartamentos, ""]
-    })
-  }, "\uFF0B Acomoda\xE7\xE3o"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(HoteisForm, {
+    hoteis: getHoteis(form),
+    onChange: hs => set({ hoteis: hs }),
+    upper: true
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "st",
