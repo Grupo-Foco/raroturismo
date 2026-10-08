@@ -2532,8 +2532,7 @@ function CostCalc({
       e.preventDefault();
       e.stopPropagation();
     }
-    const n = num(current);
-    setExpr(n ? String(n) : "");
+    setExpr("");
     setOpen(true);
   };
   const KEYS = [["C", "C", "fn"], ["⌫", "back", "fn"], ["(", "(", "op"], [")", ")", "op"], ["7", "7", "d"], ["8", "8", "d"], ["9", "9", "d"], ["÷", "/", "op"], ["4", "4", "d"], ["5", "5", "d"], ["6", "6", "d"], ["×", "*", "op"], ["1", "1", "d"], ["2", "2", "d"], ["3", "3", "d"], ["−", "-", "op"], ["0", "0", "d"], [",", ".", "d"], ["=", "=", "eq"], ["+", "+", "op"]];
@@ -2578,7 +2577,7 @@ function CostCalc({
       padding: "2px 6px",
       marginLeft: 2
     }
-  }, "🧮"), open && /*#__PURE__*/React.createElement("div", {
+  }, "🧮"), open && /*#__PURE__*/ReactDOM.createPortal( /*#__PURE__*/React.createElement("div", {
     onClick: () => setOpen(false),
     style: {
       position: "fixed",
@@ -2678,7 +2677,7 @@ function CostCalc({
     type: "button",
     className: "ghost",
     onClick: () => setOpen(false)
-  }, "Fechar"))))));
+  }, "Fechar"))))), document.body));
 }
 function FilePreview({
   file,
