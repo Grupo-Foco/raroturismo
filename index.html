@@ -1310,6 +1310,10 @@ const mergeExtras = pe => {
         on: !!pe[k].on
       };
     });
+    if (pe.milhas) e.milhas = {
+      ...e.milhas,
+      ...pe.milhas
+    };
   }
   return e;
 };
@@ -1339,6 +1343,12 @@ const emptyExtras = () => ({
     inicio: "",
     fim: "",
     apolice: ""
+  },
+  milhas: {
+    companhia: "",
+    qtd: "",
+    milheiro: "",
+    taxas: ""
   }
 });
 const emptyForm = () => ({
@@ -2679,6 +2689,168 @@ function CostCalc({
     onClick: () => setOpen(false)
   }, "Fechar"))))), document.body));
 }
+function MilhasBlock({
+  form,
+  set
+}) {
+  const m = form.extras && form.extras.milhas || {
+    companhia: "",
+    qtd: "",
+    milheiro: "",
+    taxas: ""
+  };
+  const KNOWN = ["Smiles", "Latam Pass", "TudoAzul", "Livelo", "Esfera", "Membership Rewards"];
+  const [outra, setOutra] = useState(!!m.companhia && KNOWN.indexOf(m.companhia) < 0);
+  const qtdN = parseInt(String(m.qtd || "").replace(/\D/g, ""), 10) || 0;
+  const vMilhas = qtdN / 1000 * num(m.milheiro);
+  const custoTotal = vMilhas + num(m.taxas);
+  const setM = patch => {
+    const nm = {
+      ...m,
+      ...patch
+    };
+    const q = parseInt(String(nm.qtd || "").replace(/\D/g, ""), 10) || 0;
+    const tot = q / 1000 * num(nm.milheiro) + num(nm.taxas);
+    const out = {
+      extras: {
+        ...(form.extras || {}),
+        milhas: nm
+      }
+    };
+    if (nm.qtd && nm.milheiro || nm.taxas) out.custo = tot.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    set(out);
+  };
+  const selVal = outra ? "Outra" : KNOWN.indexOf(m.companhia) >= 0 ? m.companhia : "";
+  const roStyle = {
+    width: "100%",
+    border: "1px solid #E4E0D4",
+    borderRadius: 8,
+    padding: "8px 10px",
+    fontSize: 14,
+    background: "#F1F6F2",
+    color: "#1A3A2A",
+    fontWeight: 700,
+    boxSizing: "border-box"
+  };
+  const grid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+    gap: 12,
+    marginTop: 8
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      border: `1px solid ${LINE}`,
+      borderRadius: 8,
+      padding: 12,
+      background: "#FBFCFB"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#6B7A70",
+      letterSpacing: .3
+    }
+  }, "✈️ Detalhamento das milhas"), /*#__PURE__*/React.createElement("div", {
+    style: grid
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Companhia"
+  }, /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    value: selVal,
+    onChange: e => {
+      const v = e.target.value;
+      if (v === "Outra") {
+        setOutra(true);
+        setM({
+          companhia: ""
+        });
+      } else {
+        setOutra(false);
+        setM({
+          companhia: v
+        });
+      }
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Selecione…"), KNOWN.map(k => /*#__PURE__*/React.createElement("option", {
+    key: k,
+    value: k
+  }, k)), /*#__PURE__*/React.createElement("option", {
+    value: "Outra"
+  }, "Outra")), outra && /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    style: {
+      marginTop: 6
+    },
+    placeholder: "Qual programa?",
+    value: m.companhia,
+    onChange: e => setM({
+      companhia: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement(Field, {
+    label: "Qtd de milhas"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    inputMode: "numeric",
+    placeholder: "Ex.: 60000",
+    value: m.qtd,
+    onChange: e => setM({
+      qtd: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Valor do milheiro (R$)"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    inputMode: "decimal",
+    placeholder: "Ex.: 20,00",
+    value: m.milheiro,
+    onChange: e => setM({
+      milheiro: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Valor das milhas"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: roStyle
+  }, brl(vMilhas)))), /*#__PURE__*/React.createElement("div", {
+    style: grid
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Valor das milhas"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: roStyle
+  }, brl(vMilhas))), /*#__PURE__*/React.createElement(Field, {
+    label: "Taxas (R$)"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    inputMode: "decimal",
+    placeholder: "0,00",
+    value: m.taxas,
+    onChange: e => setM({
+      taxas: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Custo Total"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...roStyle,
+      background: "#1A3A2A",
+      color: "#E4D29A",
+      border: "1px solid #C9A84C"
+    }
+  }, brl(custoTotal)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#6B7A70",
+      marginTop: 8
+    }
+  }, "O Custo Total preenche automaticamente o campo Custo (R$) acima."));
+}
 function FilePreview({
   file,
   onClose
@@ -3914,7 +4086,10 @@ function Emissao({
     onChange: e => set({
       fornecedorMilhas: e.target.value
     })
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), form.emissao === "milhas" && /*#__PURE__*/React.createElement(MilhasBlock, {
+    form: form,
+    set: set
+  }), /*#__PURE__*/React.createElement("div", {
     className: "row",
     style: {
       gap: 12,
