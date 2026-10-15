@@ -390,6 +390,7 @@ function emptyHotel() {
   return {
     nome: "",
     endereco: "",
+    localizador: "",
     checkin: "",
     checkout: "",
     apartamentos: [""],
@@ -414,6 +415,7 @@ function normHoteis(arr) {
   return (arr || []).map(h => ({
     nome: h.nome || "",
     endereco: h.endereco || "",
+    localizador: h.localizador || "",
     checkin: h.checkin || "",
     checkout: h.checkout || "",
     apartamentos: h.apartamentos && h.apartamentos.length ? h.apartamentos : [""],
@@ -643,6 +645,19 @@ function HoteisForm({
       endereco: up(e.target.value)
     })
   })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 10
+    }
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Localizador (hotel)"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    value: h.localizador || "",
+    placeholder: "Código de confirmação da reserva",
+    onChange: e => setH(i, {
+      localizador: up(e.target.value)
+    })
+  })), /*#__PURE__*/React.createElement("div", {
     className: "g2",
     style: {
       margin: "10px 0"
@@ -823,7 +838,14 @@ function HospedagemVoucher({
         color: MUTED,
         marginBottom: 6
       }
-    }, h.endereco), /*#__PURE__*/React.createElement("div", {
+    }, h.endereco), h.localizador && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: GREEN,
+        fontWeight: 700,
+        marginBottom: 6
+      }
+    }, "Localizador: ", h.localizador), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
@@ -999,7 +1021,7 @@ function HospedagemOrc({
 }
 function hotelPrintVoucher(h) {
   const n = noites(h.checkin, h.checkout);
-  return '<div style="margin-top:8px"><div style="font-weight:700">' + (h.nome || "—") + '</div><div style="font-size:11px;color:#6B7A70;margin-bottom:6px">' + (h.endereco || "") + '</div><div style="display:flex;gap:10px;margin-top:6px"><div style="flex:1;background:#F1F6F2;border-left:3px solid ' + GREEN + ';border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-IN</div><div style="font-weight:700">' + fmtDate(h.checkin) + '</div></div><div style="display:flex;align-items:center"><span style="background:' + GOLD + ';color:' + GREEN + ';font-weight:700;font-size:11px;padding:3px 8px;border-radius:20px">' + n + ' ' + (n === 1 ? "noite" : "noites") + '</span></div><div style="flex:1;background:#FBF6E8;border-left:3px solid ' + GOLD + ';border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-OUT</div><div style="font-weight:700">' + fmtDate(h.checkout) + '</div></div></div>' + ((h.apartamentos || []).filter(a => a.trim()).length ? '<div style="margin-top:8px"><div style="font-size:9px;color:#6B7A70;font-weight:700">ACOMODAÇÃO</div>' + h.apartamentos.filter(a => a.trim()).map(a => '<div style="font-weight:600;font-size:12px">• ' + a + '</div>').join("") + '</div>' : "") + (h.obs ? '<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ' + h.obs + '</div>' : "") + '</div>';
+  return '<div style="margin-top:8px"><div style="font-weight:700">' + (h.nome || "—") + '</div><div style="font-size:11px;color:#6B7A70;margin-bottom:6px">' + (h.endereco || "") + '</div>' + (h.localizador ? '<div style="font-size:11px;color:' + GREEN + ';font-weight:700;margin-bottom:6px">Localizador: ' + h.localizador + '</div>' : "") + '<div style="display:flex;gap:10px;margin-top:6px"><div style="flex:1;background:#F1F6F2;border-left:3px solid ' + GREEN + ';border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-IN</div><div style="font-weight:700">' + fmtDate(h.checkin) + '</div></div><div style="display:flex;align-items:center"><span style="background:' + GOLD + ';color:' + GREEN + ';font-weight:700;font-size:11px;padding:3px 8px;border-radius:20px">' + n + ' ' + (n === 1 ? "noite" : "noites") + '</span></div><div style="flex:1;background:#FBF6E8;border-left:3px solid ' + GOLD + ';border-radius:8px;padding:8px 12px"><div style="font-size:9px;color:#6B7A70;font-weight:700">CHECK-OUT</div><div style="font-weight:700">' + fmtDate(h.checkout) + '</div></div></div>' + ((h.apartamentos || []).filter(a => a.trim()).length ? '<div style="margin-top:8px"><div style="font-size:9px;color:#6B7A70;font-weight:700">ACOMODAÇÃO</div>' + h.apartamentos.filter(a => a.trim()).map(a => '<div style="font-weight:600;font-size:12px">• ' + a + '</div>').join("") + '</div>' : "") + (h.obs ? '<div style="font-size:10px;color:#6B7A70;font-style:italic;margin-top:8px">» ' + h.obs + '</div>' : "") + '</div>';
 }
 function hotelPrintOrc(h, meta, hi) {
   const n = noites(h.checkin, h.checkout);
