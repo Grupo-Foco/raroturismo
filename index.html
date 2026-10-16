@@ -1600,6 +1600,7 @@ function emptyCot() {
     periodoIni: "",
     periodoFim: "",
     detalhes: "",
+    telefone: "",
     status: "pendente"
   };
 }
@@ -1613,6 +1614,7 @@ const cotRow = c => ({
   periodo_ini: c.periodoIni || null,
   periodo_fim: c.periodoFim || null,
   detalhes: c.detalhes || null,
+  telefone: c.telefone || null,
   status: c.status || "pendente"
 });
 const cotFrom = r => ({
@@ -1627,6 +1629,7 @@ const cotFrom = r => ({
   periodoIni: r.periodo_ini || "",
   periodoFim: r.periodo_fim || "",
   detalhes: r.detalhes || "",
+  telefone: r.telefone || "",
   status: r.status || "pendente"
 });
 async function listCotacoes() {
@@ -1643,12 +1646,26 @@ async function listCotacoes() {
   }
   return (data || []).map(cotFrom);
 }
+const _semTel = row => {
+  const r = {
+    ...row
+  };
+  delete r.telefone;
+  return r;
+};
+const _faltaColTel = err => /telefone/i.test(String(err && (err.message || err.details || err.code) || ""));
 async function saveCotacao(c) {
   if (!sb) return c;
-  const {
+  let {
     data,
     error
   } = await sb.from("cotacoes").insert(cotRow(c)).select().single();
+  if (error && _faltaColTel(error)) {
+    ({
+      data,
+      error
+    } = await sb.from("cotacoes").insert(_semTel(cotRow(c))).select().single());
+  }
   if (error) {
     console.error(error);
     throw new Error(error.message || "Falha ao salvar cotação");
@@ -1657,9 +1674,14 @@ async function saveCotacao(c) {
 }
 async function updateCotacaoFull(id, c) {
   if (!sb || typeof id === "number") return;
-  const {
+  let {
     error
   } = await sb.from("cotacoes").update(cotRow(c)).eq("id", id);
+  if (error && _faltaColTel(error)) {
+    ({
+      error
+    } = await sb.from("cotacoes").update(_semTel(cotRow(c))).eq("id", id));
+  }
   if (error) {
     console.error(error);
     throw new Error(error.message || "Falha ao atualizar cotação");
@@ -1768,6 +1790,20 @@ function Cotacoes({
     placeholder: "Nome",
     onChange: e => set({
       nome: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Telefone"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "tel",
+    value: form.telefone || "",
+    placeholder: "(62) 99999-9999",
+    onChange: e => set({
+      telefone: e.target.value
     })
   }))), /*#__PURE__*/React.createElement("div", {
     className: "g2",
@@ -2567,6 +2603,43 @@ function CostCalc({
     setExpr("");
     setOpen(true);
   };
+  useEffect(() => {
+    if (!open) return;
+    const onKey = e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = e.key;
+      if (k >= "0" && k <= "9") {
+        press(k);
+        e.preventDefault();
+      } else if (k === "." || k === ",") {
+        press(".");
+        e.preventDefault();
+      } else if (k === "+" || k === "-" || k === "*" || k === "/") {
+        press(k);
+        e.preventDefault();
+      } else if (k === "(" || k === ")") {
+        press(k);
+        e.preventDefault();
+      } else if (k === "Enter" || k === "=") {
+        doEquals();
+        e.preventDefault();
+      } else if (k === "Backspace") {
+        press("back");
+        e.preventDefault();
+      } else if (k === "Delete") {
+        press("C");
+        e.preventDefault();
+      } else if (k === "Escape") {
+        setOpen(false);
+        e.preventDefault();
+      } else if (k === "c" || k === "C") {
+        press("C");
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, expr]);
   const KEYS = [["C", "C", "fn"], ["⌫", "back", "fn"], ["(", "(", "op"], [")", ")", "op"], ["7", "7", "d"], ["8", "8", "d"], ["9", "9", "d"], ["÷", "/", "op"], ["4", "4", "d"], ["5", "5", "d"], ["6", "6", "d"], ["×", "*", "op"], ["1", "1", "d"], ["2", "2", "d"], ["3", "3", "d"], ["−", "-", "op"], ["0", "0", "d"], [",", ".", "d"], ["=", "=", "eq"], ["+", "+", "op"]];
   const keyStyle = kind => {
     const base = {
@@ -5230,6 +5303,7 @@ function emptyOrc() {
   return {
     destino: "",
     cliente: "",
+    telefone: "",
     passageiros: "1 Adulto",
     tipo: "aereo",
     companhia: "",
@@ -5717,7 +5791,10 @@ const orcRow = o => ({
   pagamento: o.pagamento || null,
   observacoes: o.observacoes || null,
   validade: o.validade || null,
-  extras: o.extras || {}
+  extras: {
+    ...(o.extras || {}),
+    telefone: o.telefone || ""
+  }
 });
 const orcFrom = r => ({
   id: r.id,
@@ -5725,6 +5802,7 @@ const orcFrom = r => ({
   status: r.status || "pendente",
   destino: r.destino || "",
   cliente: r.cliente || "",
+  telefone: r.extras && r.extras.telefone || "",
   passageiros: r.passageiros || "1 Adulto",
   tipo: r.tipo || "aereo",
   companhia: r.companhia || "",
@@ -6350,6 +6428,20 @@ function Orcamento({
     placeholder: "Nome do cliente",
     onChange: e => set({
       cliente: e.target.value.toUpperCase()
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Telefone (interno, não sai na proposta)"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "in",
+    type: "tel",
+    value: form.telefone || "",
+    placeholder: "(62) 99999-9999",
+    onChange: e => set({
+      telefone: e.target.value
     })
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
