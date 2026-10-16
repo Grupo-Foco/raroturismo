@@ -1367,6 +1367,7 @@ const emptyExtras = () => ({
     apolice: ""
   },
   milhas: {
+    balcao: "",
     companhia: "",
     qtd: "",
     milheiro: "",
@@ -2789,6 +2790,7 @@ function MilhasBlock({
   set
 }) {
   const m = form.extras && form.extras.milhas || {
+    balcao: "",
     companhia: "",
     qtd: "",
     milheiro: "",
@@ -2852,6 +2854,23 @@ function MilhasBlock({
       letterSpacing: .3
     }
   }, "✈️ Detalhamento das milhas"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Balcão"
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "in",
+    value: m.balcao || "",
+    onChange: e => setM({
+      balcao: e.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Selecione…"), ["Balcão Erik", "Balcão Lucrar milhas", "Milhas independentes"].map(b => /*#__PURE__*/React.createElement("option", {
+    key: b,
+    value: b
+  }, b))))), /*#__PURE__*/React.createElement("div", {
     style: grid
   }, /*#__PURE__*/React.createElement(Field, {
     label: "Companhia"
@@ -5094,9 +5113,133 @@ function Relatorios({
       site_companhia: "Site cia",
       outros: "Outros"
     })
-  })), /*#__PURE__*/React.createElement(Bdcard, {
-    title: "Fornecedor de milhas",
-    rows: bd("fornecedorMilhas")
+  })), /*#__PURE__*/React.createElement(BalcaoCard, {
+    ftrips: ftrips
+  }));
+}
+function BalcaoCard({
+  ftrips
+}) {
+  const [open, setOpen] = useState(null);
+  const agg = {};
+  (ftrips || []).forEach(t => {
+    if (t.emissao !== "milhas") return;
+    const b = t.extras && t.extras.milhas && t.extras.milhas.balcao || "Sem balcão";
+    const f = t.fornecedorMilhas || "—";
+    const v = num(t.receita);
+    if (!agg[b]) agg[b] = {
+      total: 0,
+      forn: {}
+    };
+    agg[b].total += v;
+    agg[b].forn[f] = (agg[b].forn[f] || 0) + v;
+  });
+  const rows = Object.entries(agg).map(([k, o]) => ({
+    k,
+    v: o.total,
+    forn: Object.entries(o.forn).map(([fk, fv]) => ({
+      k: fk,
+      v: fv
+    })).sort((a, b) => b.v - a.v)
+  })).sort((a, b) => b.v - a.v);
+  const max = Math.max(1, ...rows.map(r => r.v));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "st",
+    style: {
+      marginBottom: 4
+    }
+  }, "Milhas por balcão"), /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 11,
+      marginBottom: 10
+    }
+  }, "Clique num balcão para ver os fornecedores"), !rows.length && /*#__PURE__*/React.createElement("div", {
+    className: "mut",
+    style: {
+      fontSize: 13
+    }
+  }, "—"), rows.map((r, i) => {
+    const aberto = open === r.k;
+    const fmax = Math.max(1, ...r.forn.map(x => x.v));
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: () => setOpen(aberto ? null : r.k),
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontSize: 13,
+        cursor: "pointer",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: MUTED,
+        marginRight: 4,
+        fontSize: 11
+      }
+    }, aberto ? "▾" : "▸"), r.k, " ", /*#__PURE__*/React.createElement("span", {
+      className: "mut",
+      style: {
+        fontSize: 11
+      }
+    }, "(" + r.forn.length + ")")), /*#__PURE__*/React.createElement("span", {
+      className: "mut"
+    }, brl(r.v))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 6,
+        background: "#F1EFE6",
+        borderRadius: 4,
+        marginTop: 3
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: `${r.v / max * 100}%`,
+        height: "100%",
+        background: GOLD,
+        borderRadius: 4
+      }
+    })), aberto && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8,
+        paddingLeft: 14,
+        borderLeft: `2px solid ${LINE}`
+      }
+    }, r.forn.map((f, j) => /*#__PURE__*/React.createElement("div", {
+      key: j,
+      style: {
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        fontSize: 12
+      }
+    }, /*#__PURE__*/React.createElement("span", null, f.k), /*#__PURE__*/React.createElement("span", {
+      className: "mut"
+    }, brl(f.v))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 5,
+        background: "#F1EFE6",
+        borderRadius: 4,
+        marginTop: 2
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: `${f.v / fmax * 100}%`,
+        height: "100%",
+        background: "#C9A84C",
+        borderRadius: 4
+      }
+    }))))));
   }));
 }
 function Bdcard({
